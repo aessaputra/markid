@@ -1,0 +1,42 @@
+[WebServer] [plugin vite:reporter] 
+[WebServer] (!) /home/aessaputra/Projects/MarkID/src/lib/pdf/load.ts is dynamically imported by /home/aessaputra/Projects/MarkID/src/lib/input/load.ts but also statically imported by /home/aessaputra/Projects/MarkID/src/lib/pdf/export.ts, /home/aessaputra/Projects/MarkID/src/lib/pdf/preview.ts, dynamic import will not move module into another chunk.
+[WebServer] 
+[WebServer] [plugin vite:reporter] 
+[WebServer] (!) /home/aessaputra/Projects/MarkID/src/lib/pdf/preview.ts is dynamically imported by /home/aessaputra/Projects/MarkID/src/lib/pdf/load.ts but also statically imported by /home/aessaputra/Projects/MarkID/src/lib/ui/PdfPreview.svelte, dynamic import will not move module into another chunk.
+[WebServer] 
+[WebServer] 
+[WebServer] (!) Some chunks are larger than 500 kB after minification. Consider:
+[WebServer] - Using dynamic import() to code-split the application
+[WebServer] - Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+[WebServer] - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+
+Running 3 tests using 1 worker
+
+  ✘  1 [webkit] › tests/browser/privacy.spec.ts:9:13 › image: source, filename and watermark never leave memory during actual download (1ms)
+Testing stopped early after 1 maximum allowed failures.
+
+
+  1) [webkit] › tests/browser/privacy.spec.ts:9:13 › image: source, filename and watermark never leave memory during actual download 
+
+    Error: browserType.launch: Executable doesn't exist at /home/aessaputra/.cache/ms-playwright/webkit-2248/pw_run.sh
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+
+    attachment #1: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/privacy-image-source-filen-69ad0-mory-during-actual-download-webkit/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/privacy-image-source-filen-69ad0-mory-during-actual-download-webkit/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    [webkit] › tests/browser/privacy.spec.ts:9:13 › image: source, filename and watermark never leave memory during actual download 
+  2 did not run
+  1 error was not a part of any test, see above for details

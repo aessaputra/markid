@@ -1,0 +1,130 @@
+Detected file path, reading file...
+{
+  issues: [],
+  suggestions: [],
+  require_another_tool_call_after_fixing: false
+}
+Detected file path, reading file...
+{
+  issues: [],
+  suggestions: [],
+  require_another_tool_call_after_fixing: false
+}
+Detected file path, reading file...
+{
+  issues: [],
+  suggestions: [],
+  require_another_tool_call_after_fixing: false
+}
+Detected file path, reading file...
+{
+  issues: [],
+  suggestions: [
+    'The stateful variable "decoded" is assigned inside an $effect which is generally consider a malpractice. Consider using $derived if possible.',
+    'The stateful variable "url" is assigned inside an $effect which is generally consider a malpractice. Consider using $derived if possible.',
+    "You are calling a function inside an $effect. Please check if the function is reassigning a stateful variable because that's considered malpractice and check if it could use  `$derived` instead. Ignore this suggestion if you are sure this function is not assigning any stateful variable or if you can't check if it does.",
+    'The stateful variable "url" is assigned inside an $effect which is generally consider a malpractice. Consider using $derived if possible.',
+    "You are calling a function inside an $effect. Please check if the function is reassigning a stateful variable because that's considered malpractice and check if it could use  `$derived` instead. Ignore this suggestion if you are sure this function is not assigning any stateful variable or if you can't check if it does."
+  ],
+  require_another_tool_call_after_fixing: true
+}
+Detected file path, reading file...
+{
+  issues: [],
+  suggestions: [],
+  require_another_tool_call_after_fixing: false
+}
+Detected file path, reading file...
+{
+  issues: [],
+  suggestions: [
+    'The usage of `bind:this` can often be replaced with an easier to read `action` or even better an `attachment`. Consider using the latter if possible.'
+  ],
+  require_another_tool_call_after_fixing: true
+}
+Detected file path, reading file...
+{
+  issues: [],
+  suggestions: [],
+  require_another_tool_call_after_fixing: false
+}
+Detected file path, reading file...
+{
+  issues: [],
+  suggestions: [
+    'The stateful variable "cache" is assigned inside an $effect which is generally consider a malpractice. Consider using $derived if possible.',
+    "You are calling a function inside an $effect. Please check if the function is reassigning a stateful variable because that's considered malpractice and check if it could use  `$derived` instead. Ignore this suggestion if you are sure this function is not assigning any stateful variable or if you can't check if it does.",
+    "You are calling the function `onerror` inside an $effect. Please check if the function is reassigning a stateful variable because that's considered malpractice and check if it could use  `$derived` instead. Ignore this suggestion if you are sure this function is not assigning any stateful variable or if you can't check if it does.",
+    "You are calling a function inside an $effect. Please check if the function is reassigning a stateful variable because that's considered malpractice and check if it could use  `$derived` instead. Ignore this suggestion if you are sure this function is not assigning any stateful variable or if you can't check if it does.",
+    'The stateful variable "cache" is assigned inside an $effect which is generally consider a malpractice. Consider using $derived if possible.',
+    "You are calling a function inside an $effect. Please check if the function is reassigning a stateful variable because that's considered malpractice and check if it could use  `$derived` instead. Ignore this suggestion if you are sure this function is not assigning any stateful variable or if you can't check if it does.",
+    "You are calling the function `createPreviewCache` inside an $effect. Please check if the function is reassigning a stateful variable because that's considered malpractice and check if it could use  `$derived` instead. Ignore this suggestion if you are sure this function is not assigning any stateful variable or if you can't check if it does.",
+    "You are calling a function inside an $effect. Please check if the function is reassigning a stateful variable because that's considered malpractice and check if it could use  `$derived` instead. Ignore this suggestion if you are sure this function is not assigning any stateful variable or if you can't check if it does.",
+    "You are calling the function `untrack` inside an $effect. Please check if the function is reassigning a stateful variable because that's considered malpractice and check if it could use  `$derived` instead. Ignore this suggestion if you are sure this function is not assigning any stateful variable or if you can't check if it does.",
+    'The stateful variable "bitmap" is assigned inside an $effect which is generally consider a malpractice. Consider using $derived if possible.',
+    "You are calling a function inside an $effect. Please check if the function is reassigning a stateful variable because that's considered malpractice and check if it could use  `$derived` instead. Ignore this suggestion if you are sure this function is not assigning any stateful variable or if you can't check if it does.",
+    "You are calling the function `onerror` inside an $effect. Please check if the function is reassigning a stateful variable because that's considered malpractice and check if it could use  `$derived` instead. Ignore this suggestion if you are sure this function is not assigning any stateful variable or if you can't check if it does.",
+    "You are calling a function inside an $effect. Please check if the function is reassigning a stateful variable because that's considered malpractice and check if it could use  `$derived` instead. Ignore this suggestion if you are sure this function is not assigning any stateful variable or if you can't check if it does.",
+    'The stateful variable "bitmap" is assigned inside an $effect which is generally consider a malpractice. Consider using $derived if possible.',
+    "You are calling a function inside an $effect. Please check if the function is reassigning a stateful variable because that's considered malpractice and check if it could use  `$derived` instead. Ignore this suggestion if you are sure this function is not assigning any stateful variable or if you can't check if it does.",
+    "You are calling the function `renderWatermark` inside an $effect. Please check if the function is reassigning a stateful variable because that's considered malpractice and check if it could use  `$derived` instead. Ignore this suggestion if you are sure this function is not assigning any stateful variable or if you can't check if it does.",
+    "You are calling a function inside an $effect. Please check if the function is reassigning a stateful variable because that's considered malpractice and check if it could use  `$derived` instead. Ignore this suggestion if you are sure this function is not assigning any stateful variable or if you can't check if it does.",
+    "You are calling a function inside an $effect. Please check if the function is reassigning a stateful variable because that's considered malpractice and check if it could use  `$derived` instead. Ignore this suggestion if you are sure this function is not assigning any stateful variable or if you can't check if it does.",
+    "You are calling a function inside an $effect. Please check if the function is reassigning a stateful variable because that's considered malpractice and check if it could use  `$derived` instead. Ignore this suggestion if you are sure this function is not assigning any stateful variable or if you can't check if it does.",
+    "You are calling a function inside an $effect. Please check if the function is reassigning a stateful variable because that's considered malpractice and check if it could use  `$derived` instead. Ignore this suggestion if you are sure this function is not assigning any stateful variable or if you can't check if it does.",
+    "You are calling the function `drawPreview` inside an $effect. Please check if the function is reassigning a stateful variable because that's considered malpractice and check if it could use  `$derived` instead. Ignore this suggestion if you are sure this function is not assigning any stateful variable or if you can't check if it does.",
+    'The usage of `bind:this` can often be replaced with an easier to read `action` or even better an `attachment`. Consider using the latter if possible.',
+    'Consider using an `attachment` instead of an `action` for "measure".'
+  ],
+  require_another_tool_call_after_fixing: true
+}
+Detected file path, reading file...
+{
+  issues: [],
+  suggestions: [],
+  require_another_tool_call_after_fixing: false
+}
+Detected file path, reading file...
+{
+  issues: [],
+  suggestions: [],
+  require_another_tool_call_after_fixing: false
+}
+Detected file path, reading file...
+{
+  issues: [],
+  suggestions: [],
+  require_another_tool_call_after_fixing: false
+}
+Detected file path, reading file...
+{
+  issues: [],
+  suggestions: [
+    'The stateful variable "image" is assigned inside an $effect which is generally consider a malpractice. Consider using $derived if possible.',
+    'The stateful variable "loading" is assigned inside an $effect which is generally consider a malpractice. Consider using $derived if possible.',
+    "You are calling a function inside an $effect. Please check if the function is reassigning a stateful variable because that's considered malpractice and check if it could use  `$derived` instead. Ignore this suggestion if you are sure this function is not assigning any stateful variable or if you can't check if it does.",
+    'The stateful variable "loading" is assigned inside an $effect which is generally consider a malpractice. Consider using $derived if possible.',
+    "You are calling the function `onerror` inside an $effect. Please check if the function is reassigning a stateful variable because that's considered malpractice and check if it could use  `$derived` instead. Ignore this suggestion if you are sure this function is not assigning any stateful variable or if you can't check if it does.",
+    "You are calling a function inside an $effect. Please check if the function is reassigning a stateful variable because that's considered malpractice and check if it could use  `$derived` instead. Ignore this suggestion if you are sure this function is not assigning any stateful variable or if you can't check if it does.",
+    'The stateful variable "image" is assigned inside an $effect which is generally consider a malpractice. Consider using $derived if possible.',
+    'The stateful variable "loading" is assigned inside an $effect which is generally consider a malpractice. Consider using $derived if possible.',
+    "You are calling the function `onready` inside an $effect. Please check if the function is reassigning a stateful variable because that's considered malpractice and check if it could use  `$derived` instead. Ignore this suggestion if you are sure this function is not assigning any stateful variable or if you can't check if it does.",
+    "You are calling a function inside an $effect. Please check if the function is reassigning a stateful variable because that's considered malpractice and check if it could use  `$derived` instead. Ignore this suggestion if you are sure this function is not assigning any stateful variable or if you can't check if it does.",
+    "You are calling the function `previewPdf` inside an $effect. Please check if the function is reassigning a stateful variable because that's considered malpractice and check if it could use  `$derived` instead. Ignore this suggestion if you are sure this function is not assigning any stateful variable or if you can't check if it does.",
+    "You are calling a function inside an $effect. Please check if the function is reassigning a stateful variable because that's considered malpractice and check if it could use  `$derived` instead. Ignore this suggestion if you are sure this function is not assigning any stateful variable or if you can't check if it does.",
+    'Consider using an `attachment` instead of an `action` for "paint".'
+  ],
+  require_another_tool_call_after_fixing: true
+}
+src/App.svelte
+src/lib/ui/WatermarkControls.svelte
+src/lib/ui/Disclosure.svelte
+src/lib/ui/ResultView.svelte
+src/lib/ui/StatusMessage.svelte
+src/lib/ui/FilePicker.svelte
+src/lib/ui/RangeField.svelte
+src/lib/ui/EditorPreview.svelte
+src/lib/ui/Field.svelte
+src/lib/ui/Button.svelte
+src/lib/ui/PdfPager.svelte
+src/lib/ui/PdfPreview.svelte

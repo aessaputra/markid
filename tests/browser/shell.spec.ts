@@ -7,7 +7,7 @@ for (const colorScheme of ['light', 'dark'] as const) {
     const externalRequests: string[] = [];
     const errors: string[] = [];
     page.on('request', request => {
-      if (new URL(request.url()).hostname !== '127.0.0.1') externalRequests.push(request.url());
+      if (new URL(request.url()).origin !== 'http://127.0.0.1:5173') externalRequests.push(request.url());
     });
     page.on('pageerror', error => errors.push(error.message));
     await page.goto('/');
