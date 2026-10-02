@@ -1,0 +1,48 @@
+{
+  "license": "CC0-1.0; original synthetic fixtures, no personal data",
+  "generator": "scripts/generate-pdf-fixtures.mjs; pdf-lib 1.17.1",
+  "files": [
+    {
+      "file": "two-pages.pdf",
+      "bytes": 1084,
+      "sha256": "a97e7efb46cd7f2e75020ecdd26a00c56814d7258511b6efde4db4c3cf5f0b3f",
+      "description": "Original synthetic text/vector mixed-size pages, Helvetica."
+    },
+    {
+      "file": "rotated-crop.pdf",
+      "bytes": 1488,
+      "sha256": "59270b45df11a68459152d4583982300826e0b9a7de7ffd45e9b75a604229252",
+      "description": "Four true page rotations and nonzero CropBox."
+    },
+    {
+      "file": "scan.pdf",
+      "bytes": 1177,
+      "sha256": "f88b5c463c1e37e168b13446c22315261980b8caf1a4f32787c2fc384e089ded",
+      "description": "Synthetic geometric portrait artwork embedded as scan."
+    },
+    {
+      "file": "signed.pdf",
+      "bytes": 606,
+      "sha256": "3b3c9619b23db771a22ee9acc12492d88a08135c311b90c2fb7a99fceea2ebfe",
+      "description": "Recognized signature dictionary sentinel, not a cryptographic signature."
+    },
+    {
+      "file": "large-scan.pdf",
+      "bytes": 1470876,
+      "sha256": "02f007df16be06d5f341958470a1918032c58878679ce534d057e633bd2e12bf",
+      "description": "Deterministic synthetic random RGB scan, uncompressed image stream; >1MiB PDF, below 10MB."
+    },
+    {
+      "file": "locked.pdf",
+      "bytes": 1705,
+      "sha256": "17060a915b05e58da0a204c9c3e8b83182e368545d2682bdca1ef10366ec7f36",
+      "description": "pypdf 6.19.0 synthetic encrypted RC4 PDF, default encrypt(test-password)"
+    },
+    {
+      "file": "broken.pdf",
+      "bytes": 16,
+      "sha256": "b9e295f0c86730ee956a72a38716ba58f3ab765ee596bbd92d70ad7b7218ed97",
+      "description": "Original deliberately malformed PDF"
+    }
+  ]
+}

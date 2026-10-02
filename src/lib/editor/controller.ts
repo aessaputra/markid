@@ -1,14 +1,14 @@
-import type { ExportResult, LoadedImage, Watermark } from './types';
+import type { ExportResult, LoadedSource, Watermark } from './types';
 /** Snapshot/revision ownership; stale finalizers cannot clear a newer job. */
-export class ExportController {
+export class ExportController<T extends LoadedSource = LoadedSource> {
  result:ExportResult | null=null;
  processing=false;
  error='';
  revision=0;
  private disposed=false;
- constructor(private readonly exporter:(image:LoadedImage,mark:Watermark,options:{revision:number})=>Promise<ExportResult>,private readonly changed:()=>void=()=>{}) {}
+ constructor(private readonly exporter:(image:T,mark:Watermark,options:{revision:number})=>Promise<ExportResult>,private readonly changed:()=>void=()=>{}) {}
  invalidate():void {++this.revision;this.result?.dispose();this.result=null;this.error='';this.changed();}
- async prepare(image:LoadedImage,mark:Watermark):Promise<void> {
+ async prepare(image:T,mark:Watermark):Promise<void> {
   if(this.disposed || this.processing || !mark.text.trim()) return;
   this.invalidate();const revision=this.revision;
   this.processing=true;this.changed();
@@ -28,12 +28,12 @@ export class ExportController {
 }
 /** Owns successful resources; pending decoders retain their resources until settled. */
 export class ImageController {
-  current: LoadedImage | null = null;
+  current: LoadedSource | null = null;
   revision = 0;
   loading = false;
   error = '';
   private disposed = false;
-  constructor(private readonly loader: (file:File)=>Promise<LoadedImage>, private readonly changed: ()=>void = ()=>{}) {}
+  constructor(private readonly loader: (file:File)=>Promise<LoadedSource>, private readonly changed: ()=>void = ()=>{}) {}
   async replace(file: File): Promise<void> {
     if (this.disposed) return;
     const revision = ++this.revision;

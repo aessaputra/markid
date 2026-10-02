@@ -16,6 +16,8 @@
   "dependencies": {
     "@fontsource/geist": "5.2.8",
     "heic-to": "1.6.5",
+    "pdf-lib": "1.17.1",
+    "pdfjs-dist": "4.10.38",
     "svelte": "5.57.1"
   },
   "devDependencies": {

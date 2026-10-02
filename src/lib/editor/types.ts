@@ -22,7 +22,11 @@ export type LoadedImage = {
   dispose(): void;
 };
 
+export type LoadedPdf = {kind:'pdf'; bytes:Uint8Array; pageCount:number; dispose():void};
+export type LoadedSource = LoadedImage | LoadedPdf;
+
 export type ExportResult = {
+  pdf?: LoadedPdf;
   blob: Blob;
   kind: 'image' | 'pdf';
   size?: Size;
