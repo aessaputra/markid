@@ -38,7 +38,10 @@
  });
  $effect(() => {
    const source=cache, asset=bitmap, snapshot={...mark};
-   if(!canvas || !source || !asset) return;
+   if(!canvas) return;
+   // Invalidate stale source/mark pixels even while the next cache is pending.
+   if(!source) {canvas.width=canvas.height=0;return;}
+   // A pending/failed watermark must never hide the successfully loaded source.
    canvas.width=Math.ceil(source.viewport.width*source.dpr);canvas.height=Math.ceil(source.viewport.height*source.dpr);
    const ctx=canvas.getContext('2d');
    if(ctx) drawPreview(ctx,source,asset,snapshot);

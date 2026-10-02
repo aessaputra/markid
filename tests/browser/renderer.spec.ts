@@ -42,6 +42,23 @@ for (const dpr of [1, 2]) for (const area of [{ width: 600, height: 400 }, { wid
   });
 }
 
+test('source-only preview clears previous watermark and letterbox pixels', async ({page}) => {
+ await page.goto('/');
+ const pixels=await page.evaluate(async()=>{
+  const {createPreviewCache,drawPreview}=await import(String('/src/lib/editor/preview.ts'));
+  const source=document.createElement('canvas');source.width=240;source.height=160;
+  const s=source.getContext('2d')!;s.fillStyle='#0000ff';s.fillRect(0,0,240,160);
+  const cache=await createPreviewCache({kind:'image',source,size:{width:240,height:160},resized:false,dispose(){}},{width:240,height:240});
+  const out=document.createElement('canvas');out.width=out.height=240;
+  const ctx=out.getContext('2d')!;ctx.fillStyle='#ff0000';ctx.fillRect(0,0,240,240);
+  try {
+   drawPreview(ctx,cache,null,{text:'pending',fontFamily:'Geist',sizeRatio:.1,x:.5,y:.5,angle:0,opacity:1,color:'#ff0000'});
+   return {source:Array.from(ctx.getImageData(120,120,1,1).data),letterbox:Array.from(ctx.getImageData(120,10,1,1).data)};
+  } finally {cache.dispose();}
+ });
+ expect(pixels).toEqual({source:[0,0,255,255],letterbox:[0,0,0,0]});
+});
+
 // The oracle composes in image space without either production composition/geometry
 // helper, then projects that raster into a centered contain rectangle. Transparent
 // sources isolate watermark ink from cache pixels, including in the letterbox.

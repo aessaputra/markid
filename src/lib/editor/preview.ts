@@ -36,7 +36,7 @@ export async function createPreviewCache(image: LoadedImage, viewport: Size, dpr
 }
 
 /** ctx canvas backing must be viewport * dpr. Uses only the reduced cached source. */
-export function drawPreview(ctx: CanvasRenderingContext2D, cache: PreviewCache, bitmap: ImageBitmap, mark: Watermark): void {
+export function drawPreview(ctx: CanvasRenderingContext2D, cache: PreviewCache, bitmap: ImageBitmap | null, mark: Watermark): void {
   if (cache.released) throw new Error('Preview cache has been released.');
   const { image, viewport, dpr } = cache;
   const t = containTransform(image, viewport);
@@ -49,6 +49,6 @@ export function drawPreview(ctx: CanvasRenderingContext2D, cache: PreviewCache, 
     ctx.drawImage(cache.source, t.x, t.y, image.width * t.scale, image.height * t.scale);
     ctx.beginPath();ctx.rect(t.x, t.y, image.width * t.scale, image.height * t.scale);ctx.clip();
     ctx.translate(t.x, t.y);ctx.scale(t.scale, t.scale);
-    composeWatermark(ctx, bitmap, mark, image);
+    if (bitmap) composeWatermark(ctx, bitmap, mark, image);
   } finally { ctx.restore(); }
 }

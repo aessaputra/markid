@@ -111,6 +111,105 @@ test('obsolete async preview assets close after rapid edits and replacement',asy
  await page.waitForTimeout(250);expect(await page.evaluate(() => (window as unknown as {liveBitmaps:Set<ImageBitmap>}).liveBitmaps.size)).toBe(3);
  await expect(page.getByLabel('Watermark text')).toHaveValue('Newest');
 });
+
+// Solid source colors isolate source identity from red watermark ink.
+async function solidFile(page: import('@playwright/test').Page, color: string, name: string) {
+ const png = await page.evaluate(color => {
+  const c=document.createElement('canvas');c.width=240;c.height=160;
+  const ctx=c.getContext('2d')!;ctx.fillStyle=color;ctx.fillRect(0,0,c.width,c.height);
+  return c.toDataURL('image/png').split(',')[1];
+ },color);
+ return {name,mimeType:'image/png',buffer:Buffer.from(png,'base64')};
+}
+async function previewPixels(page: import('@playwright/test').Page) {
+ return page.getByLabel('Image preview').evaluate((node: HTMLCanvasElement) => {
+  const ctx=node.getContext('2d')!;
+  const pixels=ctx.getImageData(0,0,node.width,node.height).data;
+  let red=0,blue=0,green=0,opaque=0;
+  for(let i=0;i<pixels.length;i+=4) {
+   if(pixels[i+3]===255) opaque++;
+   if(pixels[i]>pixels[i+1]+30 && pixels[i]>pixels[i+2]+30) red++;
+   if(pixels[i+2]===255 && pixels[i]===0 && pixels[i+1]===0 && pixels[i+3]===255) blue++;
+   if(pixels[i+1]===255 && pixels[i]===0 && pixels[i+2]===0 && pixels[i+3]===255) green++;
+  }
+  return {red,blue,green,opaque};
+ });
+}
+async function holdFontFailure(page: import('@playwright/test').Page) {
+ await page.evaluate(() => {
+  const state=window as unknown as {rejectFonts:()=>void; fontRequests:number};
+  state.fontRequests=0;
+  document.fonts.load=()=>new Promise((_,reject) => {
+   state.fontRequests++;state.rejectFonts=()=>reject(new Error('forced font failure'));
+  });
+ });
+}
+async function rejectFont(page: import('@playwright/test').Page) {
+ await expect.poll(()=>page.evaluate(()=>(window as unknown as {fontRequests:number}).fontRequests)).toBeGreaterThan(0);
+ await page.evaluate(()=>(window as unknown as {rejectFonts:()=>void}).rejectFonts());
+ await expect(page.getByRole('alert')).toContainText('Watermark font could not be loaded.');
+}
+test('source pixels remain visible with prefilled text while initial font is pending or fails',async ({page}) => {
+ await page.goto('/');
+ const source=await solidFile(page,'#0000ff','blue.png');
+ await page.getByLabel('Watermark text').fill('Prefilled');
+ await holdFontFailure(page);
+ await page.locator('input[type=file]').setInputFiles(source);
+ await expect.poll(async()=> (await previewPixels(page)).blue).toBeGreaterThan(1000);
+ expect((await previewPixels(page)).red).toBe(0);
+ await rejectFont(page);
+ await expect.poll(async()=> (await previewPixels(page)).blue).toBeGreaterThan(1000);
+ await expect(page.getByLabel('Watermark text')).toHaveValue('Prefilled');
+});
+
+
+async function visibleMarkedBlue(page: import('@playwright/test').Page) {
+ await page.goto('/');
+ await page.getByLabel('Watermark text').fill('OLD MARK');
+ await page.getByLabel('Size',{exact:true}).fill('20');
+ await page.getByLabel('Opacity',{exact:true}).fill('100');
+ await page.getByText('More options',{exact:true}).click();
+ await page.getByLabel('Color',{exact:true}).fill('#ff0000');
+ await page.locator('input[type=file]').setInputFiles(await solidFile(page,'#0000ff','blue.png'));
+ await expect.poll(async()=> (await previewPixels(page)).blue).toBeGreaterThan(1000);
+ await expect.poll(async()=> (await previewPixels(page)).red).toBeGreaterThan(100);
+}
+for(const failure of ['font','asset'] as const) test(`successful replacement shows new source pixels when ${failure} is pending or fails`,async ({page}) => {
+ await visibleMarkedBlue(page);
+ const next=await solidFile(page,'#00ff00','green.png');
+ if(failure==='font') await holdFontFailure(page);
+ else await page.evaluate(()=>{
+  const original=window.createImageBitmap.bind(window);
+  const state=window as unknown as {rejectFonts:()=>void; fontRequests:number};state.fontRequests=0;
+  window.createImageBitmap=((...args:Parameters<typeof createImageBitmap>)=>{
+   if(args[0] instanceof OffscreenCanvas) return new Promise((_,reject)=>{
+    state.fontRequests++;state.rejectFonts=()=>reject(new Error('forced asset failure'));
+   });
+   return original(...args);
+  }) as typeof createImageBitmap;
+ });
+ await page.locator('input[type=file]').setInputFiles(next);
+ await expect.poll(async()=> (await previewPixels(page)).green).toBeGreaterThan(1000);
+ expect(await previewPixels(page)).toMatchObject({blue:0,red:0});
+ await rejectFont(page);
+ expect(await previewPixels(page)).toMatchObject({blue:0,red:0});
+ await expect(page.getByLabel('Watermark text')).toHaveValue('OLD MARK');
+ // A decode failure, unlike a watermark failure, retains the last good source.
+ await page.locator('input[type=file]').setInputFiles({name:'broken.png',mimeType:'image/png',buffer:Buffer.from('bad')});
+ await expect(page.getByRole('alert')).toBeVisible();
+ expect((await previewPixels(page)).green).toBeGreaterThan(1000);
+});
+test('failed text edit clears old watermark pixels while retaining source',async ({page}) => {
+ await visibleMarkedBlue(page);
+ await holdFontFailure(page);
+ await page.getByLabel('Watermark text').fill('NEW FAILED MARK');
+ await expect.poll(async()=> (await previewPixels(page)).red).toBe(0);
+ expect((await previewPixels(page)).blue).toBeGreaterThan(1000);
+ await rejectFont(page);
+ expect((await previewPixels(page)).red).toBe(0);
+ await expect(page.getByLabel('Watermark text')).toHaveValue('NEW FAILED MARK');
+});
+
 test('font preparation failure keeps text and source',async ({page}) => {
  await page.goto('/');await page.locator('input[type=file]').setInputFiles(portrait);
  await page.evaluate(() => {document.fonts.load=async()=>{throw new Error('forced font failure');};});
