@@ -20,11 +20,13 @@ export async function createPreviewCache(image: LoadedImage, viewport: Size, dpr
   const canvas = document.createElement('canvas');
   canvas.width = Math.max(1, Math.ceil(image.size.width * t.scale * dpr));
   canvas.height = Math.max(1, Math.ceil(image.size.height * t.scale * dpr));
-  const ctx = canvas.getContext('2d');
-  if (!ctx) throw new Error('Canvas renderer is unavailable.');
-  ctx.drawImage(image.source, 0, 0, canvas.width, canvas.height);
-  const source = await createImageBitmap(canvas);
-  canvas.width = canvas.height = 0;
+  let source: ImageBitmap;
+  try {
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('Canvas renderer is unavailable.');
+    ctx.drawImage(image.source, 0, 0, canvas.width, canvas.height);
+    source = await createImageBitmap(canvas);
+  } finally { canvas.width = canvas.height = 0; }
   let released = false;
   return {
     source, image: { ...image.size }, viewport: { ...viewport }, dpr,

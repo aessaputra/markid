@@ -70,9 +70,9 @@ test('bitmap rejection falls back; URL cleanup and PNG alpha survive', async ({p
 test('file picker loads PNG and retains preview on corrupt replacement', async ({page}) => {
   await page.goto('/');
   await page.locator('input[type=file]').setInputFiles(fixture('alpha.png'));
-  await expect(page.getByRole('status')).toContainText('Ready');
-  await expect(page.getByLabel('Image preview')).toHaveAttribute('width','32');
+  await expect(page.locator('p[role=status]')).toContainText('Ready');
+  await expect(page.getByLabel('Image preview')).toHaveAttribute('data-image-width','32');
   await page.locator('input[type=file]').setInputFiles({name:'broken.jpg',mimeType:'image/jpeg',buffer:readFileSync(fixture('exif-1.jpg')).subarray(0,200)});
   await expect(page.getByRole('alert')).toContainText('Could not open this file. Try a JPG or PNG.');
-  await expect(page.getByLabel('Image preview')).toHaveAttribute('width','32');
+  await expect(page.getByLabel('Image preview')).toHaveAttribute('data-image-width','32');
 });

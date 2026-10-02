@@ -1,50 +1,36 @@
 @import "tailwindcss" source("./");
-
 @theme inline {
-  --font-sans: 'Geist', sans-serif;
-  --color-surface: var(--surface);
-  --color-text: var(--text);
-  --color-muted: var(--muted);
-  --color-border: var(--border);
-  --color-accent: var(--accent);
-  --color-danger: var(--danger);
-  --color-focus: var(--focus);
-  --radius-control: 8px;
-  --radius-panel: 12px;
+ --font-sans: 'Geist', sans-serif;
+ --color-surface: var(--surface); --color-text: var(--text); --color-muted: var(--muted);
+ --color-border: var(--border); --color-accent: var(--accent); --color-danger: var(--danger); --color-focus: var(--focus);
+ --radius-control: 8px; --radius-panel: 12px;
 }
-
 :root {
-  color-scheme: light dark;
-  --surface: #fafafa;
-  --text: #18181b;
-  --muted: #52525b;
-  --border: #d4d4d8;
-  --accent: #047857;
-  --danger: #b91c1c;
-  --focus: #047857;
-  background: #f4f4f5;
-  color: var(--text);
-  font-family: 'Geist', sans-serif;
+ color-scheme: light; --surface:#fafafa; --text:#18181b; --muted:#52525b; --border:#d4d4d8;
+ --control-border:#71717a; --range-accent:#047857; --accent:#047857; --danger:#b91c1c; --focus:#047857; --background:#f4f4f5;
+ background:var(--background);color:var(--text);font-family:'Geist',sans-serif;
 }
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --surface: #18181b;
-    --text: #fafafa;
-    --muted: #a1a1aa;
-    --border: #3f3f46;
-    --accent: #047857;
-    --danger: #fca5a5;
-    --focus: #34d399;
-    background: #09090b;
-  }
+:root[data-theme="dark"] {
+ color-scheme:dark; --surface:#18181b; --text:#fafafa; --muted:#a1a1aa; --border:#52525b;
+ --control-border:#71717a; --range-accent:#34d399; --danger:#fca5a5; --focus:#34d399; --background:#09090b;
 }
-
-body { margin: 0; min-width: 320px; min-height: 100dvh; }
-.primary-button {
-  @apply min-h-11 rounded-control bg-accent px-5 py-2.5 font-medium text-white;
-  cursor: pointer;
-  white-space: nowrap;
-}
-.primary-button:active { transform: translateY(1px); }
-:focus-visible { outline: 2px solid var(--focus); outline-offset: 4px; }
+body {margin:0;min-width:320px;min-height:100dvh;}
+.panel {@apply rounded-panel border border-border bg-surface p-4 sm:p-6;min-width:0;}
+.editor-layout {@apply grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)];align-items:start;}
+.field {@apply grid gap-2;min-width:0;}
+input:not([type="file"]),textarea,select {@apply min-h-11 w-full rounded-control border border-border bg-surface px-3 py-2 text-text;min-width:0;border-color:var(--control-border);}
+textarea {resize:vertical;}
+input[type="range"] {padding:0;accent-color:var(--range-accent);}
+input[type="color"] {padding:6px;}
+.range-row {display:grid;grid-template-columns:minmax(0,1fr) 4ch;gap:12px;align-items:center;}
+output {text-align:right;font-variant-numeric:tabular-nums;}
+.primary-button,.secondary-button {@apply min-h-11 rounded-control px-5 py-2.5 font-medium;cursor:pointer;white-space:nowrap;}
+.primary-button {@apply bg-accent text-white;}
+.secondary-button {@apply border border-border bg-surface text-text;border-color:var(--control-border);}
+button:disabled {opacity:.5;cursor:not-allowed;}
+summary {min-height:44px;cursor:pointer;display:list-item;padding:10px 0;}
+.editor-canvas {width:100%;height:clamp(200px,45vh,500px);touch-action:none;background:var(--background);border-radius:8px;}
+.empty-preview {min-height:200px;display:grid;place-items:center;text-align:center;}
+:focus-visible {outline:2px solid var(--focus);outline-offset:4px;}
+@media (min-width:1024px) and (min-height:760px) {.preview-panel {position:sticky;top:24px;}}
+@media (prefers-reduced-motion:no-preference) {button:active {transform:translateY(1px);}}
