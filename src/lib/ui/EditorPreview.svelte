@@ -4,7 +4,7 @@
  import { createPreviewCache, drawPreview, type PreviewCache } from '../editor/preview';
  import { renderWatermark } from '../editor/watermark';
  import { toImagePoint, clampImagePoint } from '../editor/geometry';
- let { image, mark, onposition, onerror }: { image: LoadedImage; mark: Watermark; onposition: (point: Point) => void; onerror: (error: string) => void } = $props();
+ let { image, mark, onposition, onerror, disabled=false }: { image: LoadedImage; mark: Watermark; disabled?:boolean; onposition: (point: Point) => void; onerror: (error: string) => void } = $props();
  let canvas: HTMLCanvasElement;
  let viewport = $state({width:1,height:1});
  let cache = $state.raw<PreviewCache | null>(null);
@@ -47,6 +47,7 @@
    if(ctx) drawPreview(ctx,source,asset,snapshot);
  });
  function move(event: PointerEvent) {
+   if(disabled) return;
    if(pointer!==event.pointerId) return;
    const bounds=canvas.getBoundingClientRect();
    const point=clampImagePoint(toImagePoint({x:event.clientX-bounds.left,y:event.clientY-bounds.top},image.size,viewport),image.size);
@@ -58,5 +59,5 @@
    if(canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
  }
 </script>
-<canvas bind:this={canvas} use:measure aria-label="Image preview" data-image-width={image.size.width} data-image-height={image.size.height} class="editor-canvas" onpointerdown={event => {if(event.button!==0) return; pointer=event.pointerId;canvas.setPointerCapture(pointer);move(event);}} onpointermove={move} onpointerup={end} onpointercancel={end} onlostpointercapture={end}>Image preview. Use Position controls to move the watermark.</canvas>
+<canvas bind:this={canvas} use:measure aria-label="Image preview" data-image-width={image.size.width} data-image-height={image.size.height} class="editor-canvas" onpointerdown={event => {if(disabled || event.button!==0) return; pointer=event.pointerId;canvas.setPointerCapture(pointer);move(event);}} onpointermove={move} onpointerup={end} onpointercancel={end} onlostpointercapture={end}>Image preview. Use Position controls to move the watermark.</canvas>
 <p class="text-sm text-muted">Drag to move the watermark, or use Position in More options.</p>

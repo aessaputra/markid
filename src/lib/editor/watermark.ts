@@ -17,7 +17,14 @@ export function composeWatermark(
 }
 
 function canvas(width: number, height: number): OffscreenCanvas | HTMLCanvasElement {
-  if (typeof OffscreenCanvas !== 'undefined') return new OffscreenCanvas(width, height);
+  if (typeof OffscreenCanvas !== 'undefined') {
+    try {
+      const surface = new OffscreenCanvas(width, height);
+      if (surface.getContext('2d')) return surface;
+      surface.width = surface.height = 0;
+    } catch { /* Use the explicit document Canvas fallback when available. */ }
+  }
+  if (typeof document === 'undefined') throw new Error('Canvas renderer is unavailable.');
   const result = document.createElement('canvas');
   result.width = width; result.height = height;
   return result;

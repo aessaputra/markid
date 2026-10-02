@@ -40,7 +40,9 @@ test('preset, replacement and failed preparation preserve edits', async ({page})
  await page.locator('input[type=file]').setInputFiles({name:'broken.png',mimeType:'image/png',buffer:Buffer.from('bad')});
  await expect(page.getByRole('alert')).toBeVisible(); await expect(page.getByLabel('Watermark text')).toHaveValue('For account check only · 2026-10-02');
  await expect(page.getByLabel('Image preview')).toHaveAttribute('data-image-width','120');
- await page.getByRole('button',{name:'Preview',exact:true}).click(); await expect(page.getByRole('alert')).toContainText('Your edits are kept');
+ // Inject an actual worker export failure rather than the removed Task 4 placeholder.
+ await page.route('**/export.worker.ts*',route=>route.abort());
+ await page.getByRole('button',{name:'Preview',exact:true}).click(); await expect(page.getByRole('alert')).toContainText('Export failed. Try again.');
  await expect(page.getByRole('button',{name:'Download',exact:true})).toHaveCount(0);
  await page.getByLabel('Watermark text').fill('   ');await expect(page.getByRole('button',{name:'Preview',exact:true})).toBeDisabled();
 });

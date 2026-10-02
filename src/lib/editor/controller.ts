@@ -1,4 +1,29 @@
-import type { LoadedImage } from './types';
+import type { ExportResult, LoadedImage, Watermark } from './types';
+/** Snapshot/revision ownership; stale finalizers cannot clear a newer job. */
+export class ExportController {
+ result:ExportResult | null=null;
+ processing=false;
+ error='';
+ revision=0;
+ private disposed=false;
+ constructor(private readonly exporter:(image:LoadedImage,mark:Watermark,options:{revision:number})=>Promise<ExportResult>,private readonly changed:()=>void=()=>{}) {}
+ invalidate():void {++this.revision;this.result?.dispose();this.result=null;this.processing=false;this.error='';this.changed();}
+ async prepare(image:LoadedImage,mark:Watermark):Promise<void> {
+  if(this.disposed || this.processing || !mark.text.trim()) return;
+  this.invalidate();const revision=this.revision;
+  this.processing=true;this.changed();
+  try {
+   const result=await this.exporter(image,{...mark},{revision});
+   if(this.disposed || revision!==this.revision) {result.dispose();return;}
+   this.result=result;
+  } catch(error) {
+   if(!this.disposed && revision===this.revision) this.error=error instanceof Error?error.message:'Export failed. Try again.';
+  } finally {
+   if(!this.disposed && revision===this.revision) {this.processing=false;this.changed();}
+  }
+ }
+ dispose():void {if(this.disposed)return;this.disposed=true;this.invalidate();}
+}
 /** Owns successful resources; pending decoders retain their resources until settled. */
 export class ImageController {
   current: LoadedImage | null = null;
