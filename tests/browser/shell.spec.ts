@@ -18,7 +18,10 @@ for (const colorScheme of ['light', 'dark'] as const) {
     await expect(button).toBeFocused();
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(320);
     expect((await button.boundingBox())?.height).toBeGreaterThanOrEqual(44);
-    expect(await page.evaluate(() => document.fonts.check('16px Geist'))).toBe(true);
+    expect(await page.evaluate(async () => {
+      const faces = await document.fonts.load('16px Geist', 'Choose file');
+      return faces.length > 0 && faces.every(face => face.family.replaceAll('"', '') === 'Geist' && face.status === 'loaded');
+    })).toBe(true);
     await page.screenshot({ path: `test-results/shell-320-${colorScheme}.png` });
     expect(externalRequests).toEqual([]);
     expect(errors).toEqual([]);
