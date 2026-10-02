@@ -1,0 +1,33 @@
+export type Size = { width: number; height: number };
+export type Point = { x: number; y: number };
+
+/** x/y: normalized display coordinates with a center anchor. Angle: clockwise degrees. */
+export type Watermark = {
+  text: string;
+  fontFamily: string;
+  sizeRatio: number;
+  x: number;
+  y: number;
+  angle: number;
+  opacity: number;
+  color: string;
+};
+
+/** Decoded sources are orientation-normalized; renderers must not reapply EXIF. */
+export type LoadedImage = {
+  kind: 'image';
+  size: Size;
+  source: CanvasImageSource;
+  resized: boolean;
+  dispose(): void;
+};
+
+export type ExportResult = {
+  blob: Blob;
+  kind: 'image' | 'pdf';
+  size?: Size;
+  dispose(): void;
+};
+
+/** Explicit experiment policy, not a universal browser memory guarantee. */
+export type ImagePolicy = { maxSide: number; maxPixels: number };

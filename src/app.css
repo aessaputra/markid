@@ -1,0 +1,50 @@
+@import "tailwindcss" source("./");
+
+@theme inline {
+  --font-sans: 'Geist', sans-serif;
+  --color-surface: var(--surface);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-accent: var(--accent);
+  --color-danger: var(--danger);
+  --color-focus: var(--focus);
+  --radius-control: 8px;
+  --radius-panel: 12px;
+}
+
+:root {
+  color-scheme: light dark;
+  --surface: #fafafa;
+  --text: #18181b;
+  --muted: #52525b;
+  --border: #d4d4d8;
+  --accent: #047857;
+  --danger: #b91c1c;
+  --focus: #047857;
+  background: #f4f4f5;
+  color: var(--text);
+  font-family: 'Geist', sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --surface: #18181b;
+    --text: #fafafa;
+    --muted: #a1a1aa;
+    --border: #3f3f46;
+    --accent: #047857;
+    --danger: #fca5a5;
+    --focus: #34d399;
+    background: #09090b;
+  }
+}
+
+body { margin: 0; min-width: 320px; min-height: 100dvh; }
+.primary-button {
+  @apply min-h-11 rounded-control bg-accent px-5 py-2.5 font-medium text-white;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.primary-button:active { transform: translateY(1px); }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 4px; }
