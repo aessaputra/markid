@@ -11,6 +11,7 @@ for orientation in range(1, 9):
         draw.rectangle(box, fill=color)
     exif = Image.Exif(); exif[274] = orientation
     image.save(out / f'exif-{orientation}.jpg', quality=95, subsampling=0, exif=exif)
+    image.save(out / f'exif-{orientation}.png', exif=exif)
 for width, height in [(4000,3000),(8000,6000)]:
     image = Image.new('RGB', (width,height), '#20a070')
     ImageDraw.Draw(image).rectangle((0,0,width//2,height//2), fill='#c05030')

@@ -49,32 +49,64 @@ async function* jpegSegments(file: Blob) {
     offset += length;
   }
 }
+/** TIFF offsets are relative to its header (PNG eXIf omits JPEG's Exif ID). */
+async function tiffOrientation(file: Blob, base: number, length: number): Promise<number> {
+  const read = (offset: number, count: number) => {
+    if (offset < 0 || offset + count > length) throw invalid();
+    return bytes(file, base + offset, count);
+  };
+  const header = await read(0, 8);
+  const order = header.getUint16(0);
+  if (order !== 0x4949 && order !== 0x4d4d) throw invalid();
+  const le = order === 0x4949;
+  if (header.getUint16(2, le) !== 42) throw invalid();
+  const ifd = header.getUint32(4, le);
+  if (ifd < 8) throw invalid();
+  const count = (await read(ifd, 2)).getUint16(0, le);
+  if (ifd + 2 + count * 12 + 4 > length) throw invalid();
+  // Scan bounded blocks; never read thumbnails, IFD chains or compressed pixels.
+  for (let i = 0; i < count; i += 5461) {
+    const block = await read(ifd + 2 + i * 12, Math.min(count - i, 5461) * 12);
+    for (let o = 0; o < block.byteLength; o += 12) {
+      if (block.getUint16(o, le) !== 0x112) continue;
+      if (block.getUint16(o + 2, le) !== 3 || block.getUint32(o + 4, le) !== 1) throw invalid();
+      const orientation = block.getUint16(o + 8, le);
+      if (orientation < 1 || orientation > 8) throw invalid();
+      return orientation;
+    }
+  }
+  return 1;
+}
 /** Reads IFD0 orientation only, never transforms pixels. Invalid metadata fails closed. */
 export async function readOrientation(file: Blob, format: string): Promise<number> {
+  if (format === 'png') {
+    if (await identify(file) !== 'png') throw invalid();
+    let offset = 8, orientation = 1, seen = false;
+    // PNG chunks: length + type + data + CRC. Skip pixel payloads by offset.
+    while (offset < file.size) {
+      const header = await bytes(file, offset, 8);
+      const length = header.getUint32(0), type = header.getUint32(4);
+      const end = offset + 12 + length;
+      if (length > 0x7fffffff || end > file.size) throw invalid();
+      if (type === 0x65584966) {
+        if (seen) throw invalid(); // PNG permits exactly one eXIf.
+        seen = true;
+        orientation = await tiffOrientation(file, offset + 8, length);
+      }
+      if (type === 0x49454e44) {
+        if (length !== 0) throw invalid();
+        return orientation;
+      }
+      offset = end;
+    }
+    throw invalid();
+  }
   if (format !== 'jpeg') return 1;
   for await (const s of jpegSegments(file)) {
     if (s.marker !== 0xe1) continue;
     const d = await bytes(file, s.offset, s.length);
     if (d.byteLength < 8 || d.getUint32(2) !== 0x45786966 || d.getUint16(6) !== 0) continue;
-    const base = 8;
-    if (d.byteLength < base + 8) throw invalid();
-    const order = d.getUint16(base);
-    if (order !== 0x4949 && order !== 0x4d4d) throw invalid();
-    const le = order === 0x4949;
-    if (d.getUint16(base + 2, le) !== 42) throw invalid();
-    const relative = d.getUint32(base + 4, le);
-    const ifd = base + relative;
-    if (relative < 8 || ifd + 2 > d.byteLength) throw invalid();
-    const count = d.getUint16(ifd, le);
-    if (ifd + 2 + count * 12 + 4 > d.byteLength) throw invalid();
-    for (let i = 0; i < count; i++) {
-      const o = ifd + 2 + i * 12;
-      if (d.getUint16(o,le) !== 0x112) continue;
-      if (d.getUint16(o+2,le) !== 3 || d.getUint32(o+4,le) !== 1) throw invalid();
-      const orientation = d.getUint16(o+8,le);
-      if (orientation < 1 || orientation > 8) throw invalid();
-      return orientation;
-    }
+    return tiffOrientation(file, s.offset + 8, s.length - 8);
   }
   return 1;
 }

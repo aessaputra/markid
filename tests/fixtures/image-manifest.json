@@ -24,9 +24,19 @@
       "sha256": "a39f68c28bc9ba71247be855d75c5e08948c9495041d77d501adfb0f71e2b92d"
     },
     {
+      "file": "exif-1.png",
+      "bytes": 310,
+      "sha256": "f4b386d94eabdb8cd4ed21f2ddb4c8f0af872b8e5b3332211e93a4c1de1919cf"
+    },
+    {
       "file": "exif-2.jpg",
       "bytes": 1438,
       "sha256": "6aeacbea827733688124dd8be30a841a8e2f1fa4af36b6126e6e272fa1021d91"
+    },
+    {
+      "file": "exif-2.png",
+      "bytes": 310,
+      "sha256": "7202bb0138676900ebd8df0691b4347ba12493a556f2e8c4be890045ecda74d4"
     },
     {
       "file": "exif-3.jpg",
@@ -34,9 +44,19 @@
       "sha256": "8458dd75d205555d3dd8513fc1c3f343fb54498b5d25bd69e066591f115e551e"
     },
     {
+      "file": "exif-3.png",
+      "bytes": 310,
+      "sha256": "e737e643f5492b73a7176ab9da3ac9d81cb2ae53185615165082ee8c4c16c539"
+    },
+    {
       "file": "exif-4.jpg",
       "bytes": 1438,
       "sha256": "e854d2977d109df2963710e271d329c3ade98431a9315987d4d922ea90fae793"
+    },
+    {
+      "file": "exif-4.png",
+      "bytes": 310,
+      "sha256": "7a523e78baab2f8567bf5af6d9ba17898fd22b1b1c34fd582a395edd0ca691d6"
     },
     {
       "file": "exif-5.jpg",
@@ -44,9 +64,19 @@
       "sha256": "28a58f11a7bf0dd65677652a586cac9f3ddb7ccbf1bbab13ed8a6e12717fbd6d"
     },
     {
+      "file": "exif-5.png",
+      "bytes": 310,
+      "sha256": "b9c61e162324d113ad1d7a0dff02e9aed5bd4a38f154b9363f184df6e091eb41"
+    },
+    {
       "file": "exif-6.jpg",
       "bytes": 1438,
       "sha256": "305c3fd0e213907c807d83862155d01cb390ea03d7c6c8d49f1be06a34e19cf8"
+    },
+    {
+      "file": "exif-6.png",
+      "bytes": 310,
+      "sha256": "1bc8846aa61ae341f7d88bf58a14bd50462f71edaf010fea274af06dd95d3d19"
     },
     {
       "file": "exif-7.jpg",
@@ -54,9 +84,19 @@
       "sha256": "7ff7611bf523f9768de11a021d00c32506e5bb23138a24860cb87c2371c17dcc"
     },
     {
+      "file": "exif-7.png",
+      "bytes": 310,
+      "sha256": "584effea4d9e7064ccae9d5c3b08f181346cd7152a339fa66d0ea5ca8be27812"
+    },
+    {
       "file": "exif-8.jpg",
       "bytes": 1438,
       "sha256": "7b35a4dcd39755b4db9a3cbf3bdea69896f053ad50d5628045053546a01c52ee"
+    },
+    {
+      "file": "exif-8.png",
+      "bytes": 310,
+      "sha256": "795796157d4c9e17fb8f00a9cec4552bbe3cbbcc6ec35715d84fac6927372e1d"
     }
   ]
 }
