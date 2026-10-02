@@ -1,0 +1,62 @@
+{
+  "generator": "scripts/generate-image-fixtures.py",
+  "library": "Pillow 12.3.0",
+  "provenance": "Original synthetic quadrants/solid colors; no personal data. Generated on Linux desktop; never generated in mobile browser.",
+  "files": [
+    {
+      "file": "12mp.jpg",
+      "bytes": 193602,
+      "sha256": "63561d72b0793ff3b922c7419c7cd3b4001df0b5286d334f5b3be33241273773"
+    },
+    {
+      "file": "48mp.jpg",
+      "bytes": 762041,
+      "sha256": "295cc5a755bc2655c1da215728a59635800075f935502db2115d37bd753a9483"
+    },
+    {
+      "file": "alpha.png",
+      "bytes": 106,
+      "sha256": "4866f0d0c8356b5cda1a2bef7fc861632ef63b160e97c54415cd29a851d5e142"
+    },
+    {
+      "file": "exif-1.jpg",
+      "bytes": 1438,
+      "sha256": "a39f68c28bc9ba71247be855d75c5e08948c9495041d77d501adfb0f71e2b92d"
+    },
+    {
+      "file": "exif-2.jpg",
+      "bytes": 1438,
+      "sha256": "6aeacbea827733688124dd8be30a841a8e2f1fa4af36b6126e6e272fa1021d91"
+    },
+    {
+      "file": "exif-3.jpg",
+      "bytes": 1438,
+      "sha256": "8458dd75d205555d3dd8513fc1c3f343fb54498b5d25bd69e066591f115e551e"
+    },
+    {
+      "file": "exif-4.jpg",
+      "bytes": 1438,
+      "sha256": "e854d2977d109df2963710e271d329c3ade98431a9315987d4d922ea90fae793"
+    },
+    {
+      "file": "exif-5.jpg",
+      "bytes": 1438,
+      "sha256": "28a58f11a7bf0dd65677652a586cac9f3ddb7ccbf1bbab13ed8a6e12717fbd6d"
+    },
+    {
+      "file": "exif-6.jpg",
+      "bytes": 1438,
+      "sha256": "305c3fd0e213907c807d83862155d01cb390ea03d7c6c8d49f1be06a34e19cf8"
+    },
+    {
+      "file": "exif-7.jpg",
+      "bytes": 1438,
+      "sha256": "7ff7611bf523f9768de11a021d00c32506e5bb23138a24860cb87c2371c17dcc"
+    },
+    {
+      "file": "exif-8.jpg",
+      "bytes": 1438,
+      "sha256": "7b35a4dcd39755b4db9a3cbf3bdea69896f053ad50d5628045053546a01c52ee"
+    }
+  ]
+}
