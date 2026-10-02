@@ -1,7 +1,7 @@
 import type {LoadedPdf,Watermark,ExportResult} from '../editor/types';
 import {renderWatermark} from '../editor/watermark';
 import {displaySize,imagePlacement} from './geometry';
-import {openPdf} from './load';
+import {openPdf,states} from './load';
 export async function exportPdf(pdf:LoadedPdf,mark:Watermark):Promise<ExportResult>{
  const {PDFDocument,degrees}=await import('pdf-lib');
  const doc=await PDFDocument.load(pdf.bytes.slice(),{updateMetadata:false});
@@ -15,11 +15,12 @@ export async function exportPdf(pdf:LoadedPdf,mark:Watermark):Promise<ExportResu
   try{ctx.drawImage(bitmap,0,0);png=await new Promise<Blob>((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('Export failed. Try again.')),'image/png'));}
   finally{canvas.width=canvas.height=0;}
   const asset=await doc.embedPng(await png.arrayBuffer());
-  for(const page of doc.getPages()){
-   const crop=page.getCropBox(),media=page.getMediaBox();
-   const x=Math.max(crop.x,media.x),y=Math.max(crop.y,media.y);
-   const box={x,y,width:Math.min(crop.x+crop.width,media.x+media.width)-x,height:Math.min(crop.y+crop.height,media.y+media.height)-y};
-   const rotation=((page.getRotation().angle%360)+360)%360,size=displaySize(box,rotation);
+  const state=states.get(pdf);if(!state || state.disposed)throw new Error('PDF is closed.');
+  for(const [index,page] of doc.getPages().entries()){
+   // Use the actual preview reader's normalized bounds/rotation, including malformed-box fallback.
+   const reader=await state.doc.getPage(index+1);
+   const [x,y,right,top]=reader.view;const rotation=reader.rotate;reader.cleanup();
+   const box={x,y,width:right-x,height:top-y},size=displaySize(box,rotation);
    const scale=Math.min(size.width,size.height)/1600,width=bitmap.width*scale,height=bitmap.height*scale;
    const p=imagePlacement(box,rotation,snapshot,width,height);
    page.drawImage(asset,{x:p.x,y:p.y,width,height,rotate:degrees(p.angle),opacity:snapshot.opacity});

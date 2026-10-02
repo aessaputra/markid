@@ -1,0 +1,14 @@
+{
+  "generator": "scripts/generate-pdf-fidelity-fixtures.mjs; pdf-lib 1.17.1",
+  "license": "CC0-1.0",
+  "normalizedBoxes": {
+    "file": "normalized-boxes.pdf",
+    "bytes": 729,
+    "sha256": "bfdf7a8e500c802827cb9f96990485aa0a688a1df8540e50f4199e3050cd389f",
+    "description": "Eight genuine malformed/empty/nonoverlap/intersected CropBoxes, Rotate 45/-90/450/quarter turns, UserUnit 2"
+  },
+  "file": "cmap.pdf",
+  "description": "Genuine Type0 Japan1 predefined 90ms-RKSJ-H CMap requirement, synthetic Japanese codes",
+  "bytes": 934,
+  "sha256": "2e1e566a50a185ef92d10cdaea5d257d79ada6599084ec681fc52d10fd9e7882"
+}

@@ -34,7 +34,7 @@
 <main class="mx-auto max-w-6xl px-4 py-6 sm:px-8">
  <header class="mb-6 flex items-center justify-between border-b border-border pb-4"><h1 class="text-xl font-semibold tracking-tight">MarkID</h1><div class="flex items-center gap-2"><label for="theme">Theme</label><select id="theme" value={theme} onchange={e => {theme=e.currentTarget.value as Theme;setTheme(theme);}}><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select></div></header>
  {#if result}
- <ResultView {result} reduced={current?.kind==='image' && (result.size?.width!==current.size.width || result.size?.height!==current.size.height)} onback={() => exports.invalidate()} onerror={message => {exports.invalidate();exportError=message;}} />
+ <ResultView {result} error={exportError} reduced={current?.kind==='image' && (result.size?.width!==current.size.width || result.size?.height!==current.size.height)} onback={() => exports.invalidate()} onerror={message => {exportError=message;}} />
  {/if}
  <div class="editor-layout" hidden={!!result} style:display={result ? 'none' : undefined}>
  <section aria-label="Source image" class="panel preview-panel grid gap-4">
