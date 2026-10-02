@@ -3,10 +3,28 @@ import { validateSize, readDimensions, readOrientation } from '../input/headers'
 import { checkFileSize } from '../input/policy';
 import { identify } from '../input/identify';
 import { decodeNative } from './native';
+import { decodeHeif, normalizeBitmap } from './heic';
+let decodeTail:Promise<void>=Promise.resolve();
+/** Serialize full decode allocation; controller still disposes stale completed resources. */
 export async function loadImage(file: File, policy: ImagePolicy): Promise<LoadedImage> {
+  const previous=decodeTail;let release!:()=>void;
+  decodeTail=new Promise<void>(resolve=>release=resolve);
+  await previous;
+  try { return await loadActive(file,policy); } finally { release(); }
+}
+async function loadActive(file: File, policy: ImagePolicy): Promise<LoadedImage> {
   checkFileSize(file.size);
   const format = await identify(file);
   const encodedSize = await readDimensions(file,format);
+  if (format === 'heif' || format === 'avif' || format === 'webp') {
+    const blob=file.slice(0,file.size,`image/${format}`);
+    try { return await normalizeBitmap(await createImageBitmap(blob,{imageOrientation:'from-image'}),policy); }
+    catch {
+      if (format === 'heif') return decodeHeif(file,policy);
+      // Native HTML fallback only, never route AVIF/WebP to HEVC.
+      return decodeNative(blob,encodedSize,fitWorkingSize(encodedSize,policy));
+    }
+  }
   const orientation = await readOrientation(file,format);
   const size = orientation >= 5 ? {width:encodedSize.height,height:encodedSize.width} : encodedSize;
   const working = fitWorkingSize(size,policy);

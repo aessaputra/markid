@@ -1,0 +1,15 @@
+import {test,expect,vi,afterEach} from 'vitest';
+import {readFileSync} from 'node:fs';
+import {loadImage} from '../../src/lib/image/load';
+import {normalizeBitmap} from '../../src/lib/image/heic';
+vi.mock('heic-to/csp',()=>({heicTo:vi.fn()}));
+import {heicTo} from 'heic-to/csp';
+const file=(n:string)=>new File([readFileSync(`tests/fixtures/codecs/${n}`)],n);
+const bitmap=(w=320,h=240)=>({width:w,height:h,close:vi.fn()}) as unknown as ImageBitmap;
+const policy={maxSide:4096,maxPixels:8000000};
+afterEach(()=>{vi.unstubAllGlobals();vi.clearAllMocks();});
+test('HEIF native failure invokes fallback once; normalized output disposes once',async()=>{const b=bitmap();vi.stubGlobal('createImageBitmap',vi.fn().mockRejectedValue(new Error('native')));vi.mocked(heicTo).mockImplementation(async()=>b as never);const result=await loadImage(file('encoded.heic'),policy);expect(heicTo).toHaveBeenCalledTimes(1);result.dispose();result.dispose();expect(b.close).toHaveBeenCalledTimes(1);});
+test('native success does not load HEVC fallback',async()=>{vi.stubGlobal('createImageBitmap',vi.fn().mockResolvedValue(bitmap()));await loadImage(file('encoded.heic'),policy);expect(heicTo).not.toHaveBeenCalled();});
+test('AVIF failure never invokes HEVC',async()=>{vi.stubGlobal('createImageBitmap',vi.fn().mockRejectedValue(new Error('native')));await expect(loadImage(file('still.avif'),policy)).rejects.toThrow();expect(heicTo).not.toHaveBeenCalled();});
+test('resize owns working bitmap and closes full bitmap; zero bitmap fails',async()=>{const full=bitmap(8000,6000),working=bitmap(3265,2449);vi.stubGlobal('createImageBitmap',vi.fn().mockResolvedValue(working));const result=await normalizeBitmap(full,policy);expect(result.resized).toBe(true);expect(full.close).toHaveBeenCalledTimes(1);result.dispose();expect(working.close).toHaveBeenCalledTimes(1);const zero=bitmap(0,0);await expect(normalizeBitmap(zero,policy)).rejects.toThrow();expect(zero.close).toHaveBeenCalledTimes(1);});
+test('only one native decode executes while another load is pending',async()=>{let resolve!:(b:ImageBitmap)=>void;const first=new Promise<ImageBitmap>(r=>resolve=r);const decode=vi.fn().mockReturnValueOnce(first).mockResolvedValue(bitmap());vi.stubGlobal('createImageBitmap',decode);const a=loadImage(file('lossy.webp'),policy);await vi.waitFor(()=>expect(decode).toHaveBeenCalledTimes(1));const b=loadImage(file('still.avif'),policy);await new Promise(r=>setTimeout(r,20));expect(decode).toHaveBeenCalledTimes(1);resolve(bitmap());(await a).dispose();(await b).dispose();expect(decode).toHaveBeenCalledTimes(2);});

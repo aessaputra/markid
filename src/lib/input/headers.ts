@@ -1,5 +1,6 @@
 import type { Size } from '../editor/types';
 import { identify } from './identify';
+import { webpSize, bmffSize } from './containers';
 const invalid = () => new Error('Could not open this file. Try a JPG or PNG.');
 export function validateSize(size: Size): Size {
   const { width, height } = size;
@@ -14,6 +15,8 @@ const frames = new Set([0xc0,0xc1,0xc2,0xc3,0xc5,0xc6,0xc7,0xc9,0xca,0xcb,0xcd,0
 /** ITU T.81 Annex B: segment length includes its two length bytes, not marker. */
 export async function readDimensions(file: Blob, format: string): Promise<Size> {
   if (await identify(file) !== format) throw invalid();
+  if (format === 'webp') return validateSize(await webpSize(file));
+  if (format === 'avif' || format === 'heif') return validateSize(await bmffSize(file));
   if (format === 'png') {
     const d = await bytes(file, 8, 25);
     if (d.getUint32(0) !== 13 || d.getUint32(4) !== 0x49484452) throw invalid();
