@@ -42,6 +42,101 @@ for (const dpr of [1, 2]) for (const area of [{ width: 600, height: 400 }, { wid
   });
 }
 
+// The oracle composes in image space without either production composition/geometry
+// helper, then projects that raster into a centered contain rectangle. Transparent
+// sources isolate watermark ink from cache pixels, including in the letterbox.
+for (const dpr of [1, 2]) for (const { area, viewport } of [
+  { area: { width: 600, height: 400 }, viewport: { width: 317, height: 439 } },
+  { area: { width: 400, height: 600 }, viewport: { width: 463, height: 281 } },
+]) {
+  test(`actual preview helper parity ${area.width}x${area.height} in ${viewport.width}x${viewport.height} DPR ${dpr}`, async ({ browser }) => {
+    const context = await browser.newContext({ deviceScaleFactor: dpr });
+    try {
+      const page = await context.newPage();
+      await page.goto('/');
+      const results = await page.evaluate(async ({ area, viewport, dpr }) => {
+        const pp = '/src/lib/editor/preview.ts';
+        const { createPreviewCache, drawPreview } = await import(/* @vite-ignore */ pp);
+        const wp = '/src/lib/editor/watermark.ts';
+        const { renderWatermark } = await import(/* @vite-ignore */ wp);
+        const source = document.createElement('canvas');
+        source.width = area.width; source.height = area.height;
+        source.getContext('2d')!; // Initialize a transparent, orientation-normalized source.
+        const cache = await createPreviewCache({ kind: 'image', source, size: area, resized: false, dispose() {} }, viewport, dpr);
+        const mark = { text: 'Ágj\nFor verification only', fontFamily: 'Geist', sizeRatio: .08, x: .27, y: .71, angle: 0, opacity: .5, color: '#ff0000' };
+        const bitmap = await renderWatermark(mark, area);
+        const scale = Math.min(viewport.width / area.width, viewport.height / area.height);
+        const offsetX = (viewport.width - area.width * scale) / 2;
+        const offsetY = (viewport.height - area.height * scale) / 2;
+        function measure(canvas: HTMLCanvasElement) {
+          const pixels = canvas.getContext('2d')!.getImageData(0, 0, canvas.width, canvas.height).data;
+          let left = canvas.width, right = -1, top = canvas.height, bottom = -1;
+          let weight = 0, sumX = 0, sumY = 0, letterboxAlpha = 0;
+          for (let y = 0; y < canvas.height; y++) for (let x = 0; x < canvas.width; x++) {
+            const alpha = pixels[(y * canvas.width + x) * 4 + 3];
+            // Compare visible ink, excluding sub-8/255 resampling fringe.
+            if (alpha >= 8) {
+              left = Math.min(left, x); right = Math.max(right, x + 1);
+              top = Math.min(top, y); bottom = Math.max(bottom, y + 1);
+              weight += alpha; sumX += (x + .5) * alpha; sumY += (y + .5) * alpha;
+            }
+            // Only whole pixels outside the fractional contain rect are letterbox.
+            if (x + 1 <= offsetX * dpr || x >= (offsetX + area.width * scale) * dpr ||
+                y + 1 <= offsetY * dpr || y >= (offsetY + area.height * scale) * dpr) {
+              letterboxAlpha = Math.max(letterboxAlpha, alpha);
+            }
+          }
+          return { bounds: [left, right, top, bottom].map(v => v / dpr),
+            center: [sumX / weight / dpr, sumY / weight / dpr], weight, letterboxAlpha };
+        }
+        const results = [];
+        try {
+          for (const angle of [-180, 0, 45, 180]) for (const position of [
+            { x: .27, y: .71 }, { x: 0, y: .23 }, { x: 1, y: .79 },
+          ]) {
+            const current = { ...mark, ...position, angle };
+            const full = document.createElement('canvas');
+            full.width = area.width; full.height = area.height;
+            const fullCtx = full.getContext('2d')!;
+            // Independent composition; canvas image bounds provide export clipping.
+            fullCtx.globalAlpha = current.opacity;
+            fullCtx.translate(current.x * area.width, current.y * area.height);
+            fullCtx.rotate(current.angle * Math.PI / 180);
+            fullCtx.drawImage(bitmap, -bitmap.width / 2, -bitmap.height / 2);
+            const expected = document.createElement('canvas');
+            expected.width = viewport.width * dpr; expected.height = viewport.height * dpr;
+            expected.getContext('2d')!.drawImage(full, offsetX * dpr, offsetY * dpr,
+              area.width * scale * dpr, area.height * scale * dpr);
+            const actual = document.createElement('canvas');
+            actual.width = expected.width; actual.height = expected.height;
+            drawPreview(actual.getContext('2d')!, cache, bitmap, current);
+            results.push({ angle, position, actual: measure(actual), expected: measure(expected),
+              imageEdges: [offsetX, offsetX + area.width * scale] });
+          }
+        } finally { bitmap.close(); cache.dispose(); }
+        return results;
+      }, { area, viewport, dpr });
+      for (const result of results) {
+        const label = `angle=${result.angle}, position=${JSON.stringify(result.position)}`;
+        expect(result.actual.weight, label).toBeGreaterThan(0);
+        expect(result.expected.weight, label).toBeGreaterThan(0);
+        expect(result.actual.letterboxAlpha, label).toBe(0);
+        for (const key of ['bounds', 'center'] as const) {
+          result.expected[key].forEach((value, i) => {
+            expect(Math.abs(result.actual[key][i] - value), `${label} ${key}[${i}] CSSpx`).toBeLessThanOrEqual(1);
+          });
+        }
+        // Edge positions really exercise clipping rather than merely testing a
+        // centered mark that never reaches the contain/image boundary.
+        if (result.position.x === 0 || result.position.x === 1) {
+          const edge = result.position.x === 0 ? 0 : 1;
+          expect(Math.abs(result.expected.bounds[edge] - result.imageEdges[edge]), `${label} clipped edge`).toBeLessThanOrEqual(1);
+        }
+      }
+    } finally { await context.close(); }
+  });
+}
+
 test('preview caches the viewport source across position changes and disposes ownership', async ({ page }) => {
   await page.goto('/');
   const result = await page.evaluate(async () => {
