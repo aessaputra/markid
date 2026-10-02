@@ -19,13 +19,13 @@ Task 8 audit: upstream README maps heic-to 1.6.5 to libheif 1.23.5 and describes
 
 ## PDF dependencies and assets
 
-`pdf-lib` 1.17.1: MIT, copyright Andrew Dillon and contributors; full license shipped at `/licenses/pdf-lib-MIT.txt`. Dependencies @pdf-lib/standard-fonts and @pdf-lib/upng are MIT, pako is MIT/Zlib, tslib Apache-2.0; exact versions recorded in package-lock.json. No AGPL reference code copied.
+`pdf-lib` 1.17.1: MIT, copyright Andrew Dillon and contributors; full license shipped at `/licenses/pdf-lib-MIT.txt`. Dependencies @pdf-lib/standard-fonts and @pdf-lib/upng are MIT, pako is MIT/Zlib, tslib 1.14.1 is 0BSD; exact versions recorded in package-lock.json. No AGPL reference code copied.
 
 `pdfjs-dist` 4.10.38: Apache-2.0, Mozilla Foundation contributors, full license at `/licenses/pdfjs-Apache-2.0.txt`. Legacy browser build and matching worker are lazy local Vite assets. Pin selected instead of current 6.3.289: legacy build retains older-browser polyfills and documented isEvalSupported=false; Node engine >=20, tested Node24. Newest package is not evidence of target-engine compatibility. Preview uses Canvas only, no viewer, scripting manager, link handlers, forms or annotation DOM. CMaps and standard fonts copied unmodified to `/pdf-assets/` from the pinned package; bundled Foxit PDFium fonts carry BSD-style LICENSE_FOXIT and Liberation fonts OFL LICENSE_LIBERATION in that directory. These license files are served with the font assets. Runtime fetches stay same-origin. Host optional native canvas is not shipped.
 
 ## Development-only tools
 
-Exact installed package license metadata is recorded in `docs/testing/artifacts/package-license-inventory.json` (includes runtime and development packages). @axe-core/playwright/axe-core 4.11.1 are MPL-2.0 and used only for tests; Playwright and TypeScript are Apache-2.0; Svelte/Vite/Vitest/Tailwind tooling is MIT. Poppler pdftoppm 24.02.0 is an installed independent test renderer, not bundled into MarkID. Metadata inventory is not a transitive compiled-code license audit. `npm audit --include=dev` returned zero reported vulnerabilities, not a license/security guarantee.
+Exact installed package license metadata is recorded in `docs/testing/artifacts/package-license-inventory.json` (includes runtime and development packages). @axe-core/playwright 4.11.1 (wrapper) and axe-core 4.11.4 (engine) are MPL-2.0 and used only for tests; Playwright and TypeScript are Apache-2.0; Svelte/Vite/Vitest/Tailwind tooling is MIT. Poppler pdftoppm 24.02.0 is an installed independent test renderer, not bundled into MarkID. Metadata inventory is not a transitive compiled-code license audit. `npm audit --include=dev` returned zero reported vulnerabilities, not a license/security guarantee.
 
 ## Codec fixtures
 

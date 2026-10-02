@@ -1,0 +1,46 @@
+[2m[WebServer] [22m[33m[plugin vite:reporter] 
+[2m[WebServer] [22m(!) /home/aessaputra/Projects/MarkID/src/lib/pdf/load.ts is dynamically imported by /home/aessaputra/Projects/MarkID/src/lib/input/load.ts but also statically imported by /home/aessaputra/Projects/MarkID/src/lib/pdf/export.ts, /home/aessaputra/Projects/MarkID/src/lib/pdf/preview.ts, dynamic import will not move module into another chunk.
+[2m[WebServer] [22m[39m
+[2m[WebServer] [22m[33m[plugin vite:reporter] 
+[2m[WebServer] [22m(!) /home/aessaputra/Projects/MarkID/src/lib/pdf/preview.ts is dynamically imported by /home/aessaputra/Projects/MarkID/src/lib/pdf/load.ts but also statically imported by /home/aessaputra/Projects/MarkID/src/lib/ui/PdfPreview.svelte, dynamic import will not move module into another chunk.
+[2m[WebServer] [22m[39m
+[2m[WebServer] [22m[33m
+[2m[WebServer] [22m(!) Some chunks are larger than 500 kB after minification. Consider:
+[2m[WebServer] [22m- Using dynamic import() to code-split the application
+[2m[WebServer] [22m- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+[2m[WebServer] [22m- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.[39m
+
+Running 1 test using 1 worker
+
+  ✘  1 [chromium] › tests/browser/release.spec.ts:24:1 › production hashed JPEG worker returns the downloaded bytes without main Canvas encoding (2.4s)
+
+
+  1) [chromium] › tests/browser/release.spec.ts:24:1 › production hashed JPEG worker returns the downloaded bytes without main Canvas encoding 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoHaveLength[2m([22m[32mexpected[39m[2m)[22m
+
+    Expected length: [32m1[39m
+    Received length: [31m0[39m
+    Received array:  [31m[][39m
+
+      61 |  expect([...bytes.subarray(0,3)]).toEqual([255,216,255]);
+      62 |  const evidence=await page.evaluate(async()=>{const e=(window as any).jpegWorkerEvidence;await Promise.all(e.pending);return {workers:e.workers,encodes:e.encodes,violations:e.violations};});
+    > 63 |  expect(evidence.workers).toHaveLength(1);
+         |                           ^
+      64 |  const worker=evidence.workers[0];
+      65 |  expect(new URL(worker.url).origin).toBe(new URL(page.url()).origin);
+      66 |  expect(new URL(worker.url).pathname).toMatch(/^\/assets\/export\.worker-[\w-]+\.js$/);
+        at /home/aessaputra/Projects/MarkID/tests/browser/release.spec.ts:63:27
+
+    Error Context: test-results/release-production-hashed--b1dcb-ithout-main-Canvas-encoding-chromium/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/release-production-hashed--b1dcb-ithout-main-Canvas-encoding-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/release-production-hashed--b1dcb-ithout-main-Canvas-encoding-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    [chromium] › tests/browser/release.spec.ts:24:1 › production hashed JPEG worker returns the downloaded bytes without main Canvas encoding 

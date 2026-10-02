@@ -4,15 +4,15 @@
 
 ## Executed evidence
 
-Environment: Linux x86_64; Node 24.21.0 / npm 11.19.0; Google Chrome for Testing **153.0.8010.12**, cached executable selected via environment. Playwright 1.58.2, Svelte 5.57.1, svelte-check 4.3.6, TypeScript 5.9.3, Vitest 4.1.11, Vite 7.3.6, Tailwind 4.1.18, axe 4.11.1, Poppler 24.02.0. Dependency versions and licenses: [inventory](artifacts/package-license-inventory.json).
+Environment: Linux x86_64; Node 24.21.0 / npm 11.19.0; Google Chrome for Testing **153.0.8010.12**, cached executable selected via environment. Playwright 1.58.2, Svelte 5.57.1, svelte-check 4.3.6, TypeScript 5.9.3, Vitest 4.1.11, Vite 7.3.6, Tailwind 4.1.18, @axe-core/playwright 4.11.1 (wrapper), axe-core 4.11.4 (engine), Poppler 24.02.0. Dependency versions and licenses: [inventory](artifacts/package-license-inventory.json).
 
 | Gate | Status | Actual evidence / scope |
 |---|---|---|
 | Type/Svelte check | PASS | 0 errors, 0 warnings; tsc succeeds |
 | Unit | PASS | 9 files / 53 tests |
-| Desktop Chromium browser suite | PASS | 182 passed; 17 deliberately skipped production-only tests (not PASS) |
+| Desktop Chromium browser suite | PASS | 182 passed; 18 deliberately skipped production-only tests (not PASS) |
 | Build | PASS | 332 modules; mixed static/dynamic PDF import and >500KB chunk warnings remain |
-| Production HTTP/CSP | PASS | 32 tests on loopback built dist, actual CSP/nosniff; HEVC blob worker, local PDF mjs worker, JPEG worker and forced main Canvas fallback |
+| Production HTTP/CSP | PASS | 33 tests (fix1) on loopback built dist, actual CSP/nosniff; HEVC blob worker, local PDF mjs worker, positively observed hashed JPEG worker with matching successful reply/download bytes and zero main Canvas encodes; forced main Canvas fallback tested separately |
 | HTML/cache | PASS | no-cache HTML with SHA256 ETag, matching If-None-Match → 304 empty; hashed JS immutable + conditional 304 |
 | Image/HEIC/PDF privacy | PASS (observed paths) | actual downloads; context-wide all-method requests, exact origin including scheme/port, production asset-path allowlist/no query, secret/name/raw base64+hex URL checks, no body, console secret/name checks; no cookies, Storage writes, IDB databases, Cache writes/keys or SW registrations; production no websocket |
 | Accessibility | PASS (automated scope) | 20 WCAG2/2.1 A/AA axe scans per server (empty/editor/results × 2 widths × 2 themes), zero violations; keyboard file chooser/text/tab/disclosure/position/Preview; 320px no horizontal overflow. Not a complete accessibility certification/screen-reader assessment |
@@ -46,6 +46,14 @@ npx -y -p node@24 -c 'npm audit --include=dev'
 ```
 
 Full real outputs: [check/unit/browser/build](artifacts/task-8-check-unit-browser-build.log), [production](artifacts/task-8-production.log), [all component autofixer](artifacts/task-8-autofixer.log), [WebKit blocker](artifacts/task-8-webkit-blocked.log). Autofixer found no issues; generic effect/attachment suggestions retained after reviewing async resource ownership/stale cleanup (not a claim of zero suggestions). npm audit returned zero reported vulnerabilities. Initial full browser invocation without executable override failed at launch; corrected full command above passes. Initial release header test failed because ETag was missing; server now supports conditional responses. A production namespace probing attempt for zoom failed; independent Poppler replaced that test-only probe.
+
+## Fix1 worker evidence and sensitivity — 2026-10-02
+
+Fresh actual commands use the cached Chromium environment and Node24 wrapper above: check/unit/browser/build exit0 (0 errors/warnings, 53 unit, 182 browser PASS/18 production-only skipped), production suite exit0 (33 PASS), final check exit0. Logs: [full suite/build](artifacts/task-8-fix1-check-unit-browser-build.log), [production](artifacts/task-8-fix1-production.log), [final check/versions](artifacts/task-8-fix1-final-check.log), [targeted GREEN](artifacts/task-8-fix1-worker-green.log). Accessibility runs as part of the required suites, not because metadata correction requires a rerun. Wrapper4.11.1 and engine4.11.4 are distinct; tslib1.14.1 is 0BSD.
+
+The new `release.spec.ts` test transparently delegates native Worker construction/postMessage and Canvas encode methods, observes real messages without replacing results, checks same-origin hashed worker URL and Playwright worker event, matching id1/revision4, successful JPEG Blob, exact downloaded-byte equality, independently decoded80×120 size, and zero HTML Canvas toBlob/toDataURL calls/CSP violations/page errors. [Observed summary](artifacts/jpeg-worker-evidence.json); [actual downloaded worker JPEG](artifacts/worker-final.jpg):1,367 bytes, SHA256 `04616be179d6b1a4280407588aaa01073b67c48d35fa66fd55a63fe99c3f41dd`. This is worker-use evidence, not small-text readability evidence.
+
+Sensitivity RED: temporarily inserted `return false` in `workerAvailable()` and ran `./node_modules/.bin/playwright test -c playwright.csp.config.ts --project=chromium release.spec.ts -g "production hashed JPEG" --workers=1` under the same env/Node wrapper. [RED log](artifacts/task-8-fix1-worker-red.log) exit1: actual fallback download passed JPEG size/signature assertions, then expected1 worker/received0 failed. Mutation restored byte-for-byte, targeted command exit0; final production rebuild verified original dist manifest unchanged (210 files, zero missing/extra/hash differences). No security headers or application code changed. Existing synthetic quality files remain the original visually reviewed artifacts below; regeneration during suite execution is not substituted silently. Full-release BLOCKED rows are unchanged.
 
 ## Artifact identity and quality review
 

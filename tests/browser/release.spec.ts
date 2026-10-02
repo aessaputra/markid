@@ -21,6 +21,62 @@ test('actual HTTP security headers, immutable hashed assets and HTML conditional
  const cached=await request.get(script,{headers:{'If-None-Match':asset.headers().etag}});
  expect(cached.status()).toBe(304);
 });
+test('production hashed JPEG worker returns the downloaded bytes without main Canvas encoding',async({page},info)=>{
+ const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
+ const workers:string[]=[];page.on('worker',w=>workers.push(w.url()));
+ await page.addInitScript(()=>{
+  const evidence={workers:[] as any[],encodes:[] as string[],violations:[] as string[],pending:[] as Promise<void>[]};
+  (window as any).jpegWorkerEvidence=evidence;
+  document.addEventListener('securitypolicyviolation',e=>evidence.violations.push(e.violatedDirective));
+  const NativeWorker=window.Worker;
+  window.Worker=new Proxy(NativeWorker,{construct(Target,args){
+   const worker=Reflect.construct(Target,args) as Worker;
+   const record={url:new URL(String(args[0]),location.href).href,requests:[] as any[],responses:[] as any[]};
+   evidence.workers.push(record);
+   const post=worker.postMessage;
+   worker.postMessage=function(...args:any[]){
+    const data=args[0];record.requests.push({id:data.id,revision:data.revision});
+    return Reflect.apply(post,this,args);
+   };
+   worker.addEventListener('message',({data})=>{
+    const response={id:data.id,revision:data.revision,error:data.error,unsupported:data.unsupported,type:data.blob?.type,size:data.size,bytes:[] as number[]};
+    record.responses.push(response);
+    if(data.blob instanceof Blob) evidence.pending.push(data.blob.arrayBuffer().then((buffer:ArrayBuffer)=>{response.bytes=Array.from(new Uint8Array(buffer));}));
+   });
+   return worker;
+  }});
+  for(const method of ['toBlob','toDataURL'] as const){
+   const native=HTMLCanvasElement.prototype[method];
+   (HTMLCanvasElement.prototype as any)[method]=function(...args:any[]){evidence.encodes.push(method);return Reflect.apply(native,this,args);};
+  }
+ });
+ await page.goto('/');await page.getByLabel('Choose file').setInputFiles('tests/fixtures/images/exif-6.png');
+ await page.getByLabel('Watermark text').fill('Real production JPEG worker');
+ await page.getByRole('button',{name:'Preview',exact:true}).click();
+ await expect(page.getByRole('button',{name:'Download',exact:true})).toBeEnabled();
+ const event=page.waitForEvent('download');await page.getByRole('button',{name:'Download',exact:true}).click();
+ const file=info.outputPath('worker-final.jpg');await (await event).saveAs(file);
+ const bytes=await readFile(file);
+ expect(bytes.length).toBeGreaterThan(100);expect(bytes.length).toBeLessThanOrEqual(1048576);
+ expect([...bytes.subarray(0,3)]).toEqual([255,216,255]);
+ const evidence=await page.evaluate(async()=>{const e=(window as any).jpegWorkerEvidence;await Promise.all(e.pending);return {workers:e.workers,encodes:e.encodes,violations:e.violations};});
+ expect(evidence.workers).toHaveLength(1);
+ const worker=evidence.workers[0];
+ expect(new URL(worker.url).origin).toBe(new URL(page.url()).origin);
+ expect(new URL(worker.url).pathname).toMatch(/^\/assets\/export\.worker-[\w-]+\.js$/);
+ expect(workers).toEqual([worker.url]);
+ expect(worker.requests).toHaveLength(1);expect(worker.responses).toHaveLength(1);
+ const response=worker.responses[0];
+ expect({id:response.id,revision:response.revision}).toEqual(worker.requests[0]);
+ expect(response.error).toBeUndefined();expect(response.unsupported).toBeUndefined();expect(response.type).toBe('image/jpeg');
+ expect(Buffer.from(response.bytes)).toEqual(bytes); // Actual worker result is used, not just received.
+ const decoded=await page.evaluate(async bytes=>{const bitmap=await createImageBitmap(new Blob([new Uint8Array(bytes)],{type:'image/jpeg'}));const size={width:bitmap.width,height:bitmap.height};bitmap.close();return size;},[...bytes]);
+ expect(decoded).toEqual(response.size);expect(decoded.width).toBeGreaterThan(0);expect(decoded.height).toBeGreaterThan(0);
+ expect(evidence.encodes).toEqual([]);expect(evidence.violations).toEqual([]);expect(errors).toEqual([]);
+ const summary=JSON.stringify({...evidence,workers:evidence.workers.map((w:any)=>({...w,responses:w.responses.map((r:any)=>({...r,bytes:r.bytes.length}))})),decoded,downloadBytes:bytes.length},null,2);
+ await import('node:fs/promises').then(fs=>fs.writeFile(info.outputPath('jpeg-worker-evidence.json'),summary));
+ await info.attach('jpeg-worker-evidence',{body:summary,contentType:'application/json'});
+});
 test('production main Canvas fallback exports under real CSP',async({page})=>{
  await page.addInitScript(()=>{Object.defineProperty(window,'OffscreenCanvas',{value:undefined});});
  const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));

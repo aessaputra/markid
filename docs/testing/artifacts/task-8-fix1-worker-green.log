@@ -1,0 +1,17 @@
+[2m[WebServer] [22m[33m[plugin vite:reporter] 
+[2m[WebServer] [22m(!) /home/aessaputra/Projects/MarkID/src/lib/pdf/load.ts is dynamically imported by /home/aessaputra/Projects/MarkID/src/lib/input/load.ts but also statically imported by /home/aessaputra/Projects/MarkID/src/lib/pdf/export.ts, /home/aessaputra/Projects/MarkID/src/lib/pdf/preview.ts, dynamic import will not move module into another chunk.
+[2m[WebServer] [22m[39m
+[2m[WebServer] [22m[33m[plugin vite:reporter] 
+[2m[WebServer] [22m(!) /home/aessaputra/Projects/MarkID/src/lib/pdf/preview.ts is dynamically imported by /home/aessaputra/Projects/MarkID/src/lib/pdf/load.ts but also statically imported by /home/aessaputra/Projects/MarkID/src/lib/ui/PdfPreview.svelte, dynamic import will not move module into another chunk.
+[2m[WebServer] [22m[39m
+[2m[WebServer] [22m[33m
+[2m[WebServer] [22m(!) Some chunks are larger than 500 kB after minification. Consider:
+[2m[WebServer] [22m- Using dynamic import() to code-split the application
+[2m[WebServer] [22m- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+[2m[WebServer] [22m- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.[39m
+
+Running 1 test using 1 worker
+
+  ✓  1 [chromium] › tests/browser/release.spec.ts:24:1 › production hashed JPEG worker returns the downloaded bytes without main Canvas encoding (589ms)
+
+  1 passed (4.4s)
