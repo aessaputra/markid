@@ -7,7 +7,7 @@ export class ExportController {
  revision=0;
  private disposed=false;
  constructor(private readonly exporter:(image:LoadedImage,mark:Watermark,options:{revision:number})=>Promise<ExportResult>,private readonly changed:()=>void=()=>{}) {}
- invalidate():void {++this.revision;this.result?.dispose();this.result=null;this.processing=false;this.error='';this.changed();}
+ invalidate():void {++this.revision;this.result?.dispose();this.result=null;this.error='';this.changed();}
  async prepare(image:LoadedImage,mark:Watermark):Promise<void> {
   if(this.disposed || this.processing || !mark.text.trim()) return;
   this.invalidate();const revision=this.revision;
@@ -19,7 +19,9 @@ export class ExportController {
   } catch(error) {
    if(!this.disposed && revision===this.revision) this.error=error instanceof Error?error.message:'Export failed. Try again.';
   } finally {
-   if(!this.disposed && revision===this.revision) {this.processing=false;this.changed();}
+   // Invalidation changes ownership, not execution: only settlement releases the lock.
+   this.processing=false;
+   if(!this.disposed) this.changed();
   }
  }
  dispose():void {if(this.disposed)return;this.disposed=true;this.invalidate();}

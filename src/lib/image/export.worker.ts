@@ -9,7 +9,12 @@ export type ExportResponse={id:number;revision:number;blob:Blob;size:Size} | {id
 scope.onmessage=async ({data}:MessageEvent<ExportRequest>)=>{
  const {id,revision,image,size,mark}=data;
  try {
-  if(typeof OffscreenCanvas==='undefined' || !new OffscreenCanvas(1,1).getContext('2d') || typeof FontFace==='undefined' || !scope.fonts || !OffscreenCanvas.prototype.convertToBlob) {
+  // Capability exceptions are unsupported; font loading and encoding below remain errors.
+  let supported=false;
+  try {
+   supported=typeof OffscreenCanvas!=='undefined' && !!new OffscreenCanvas(1,1).getContext('2d') && typeof FontFace!=='undefined' && !!scope.fonts && typeof OffscreenCanvas.prototype.convertToBlob==='function';
+  } catch { /* Worker capability can differ from the page's successful probe. */ }
+  if(!supported) {
    scope.postMessage({id,revision,error:EXPORT_ERROR,unsupported:true} satisfies ExportResponse);return;
   }
   // Workers have their own FontFaceSet; no dependency on the document's CSS faces.
