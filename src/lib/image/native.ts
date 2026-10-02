@@ -1,5 +1,6 @@
-import type { LoadedImage, Size } from '../editor/types';
+import type { ImagePolicy, LoadedImage, Size } from '../editor/types';
 import { validateSize } from '../input/headers';
+import { fitWorkingSize } from './load';
 const failure = () => new Error('Could not open this file. Try a JPG or PNG.');
 /** Decoder applies EXIF. Never apply a second orientation transform. */
 export async function decodeNative(blob: Blob, displaySize: Size, workingSize: Size): Promise<LoadedImage> {
@@ -15,13 +16,20 @@ export async function decodeNative(blob: Blob, displaySize: Size, workingSize: S
       return {kind:'image',size:workingSize,source,resized,dispose(){if (!disposed) {disposed=true;source.close();}}};
     } catch { bitmap?.close(); /* Native HTML decoder fallback below. */ }
   }
+  return decodeNativeHtml(blob, undefined, displaySize, workingSize);
+}
+/** Modern fallback trusts real HTML display dimensions, not encoded metadata. */
+export async function decodeNativeHtml(blob:Blob, policy?:ImagePolicy, displaySize?:Size, expectedWorking?:Size):Promise<LoadedImage> {
   const url = URL.createObjectURL(blob);
   const image = new Image();
   let canvas: HTMLCanvasElement | undefined;
   try {
     await new Promise<void>((resolve,reject)=>{image.onload=()=>resolve();image.onerror=()=>reject(failure());image.src=url;});
     validateSize({width:image.naturalWidth,height:image.naturalHeight});
-    if (image.naturalWidth !== displaySize.width || image.naturalHeight !== displaySize.height) throw failure();
+    const actual={width:image.naturalWidth,height:image.naturalHeight};
+    if (displaySize && (actual.width !== displaySize.width || actual.height !== displaySize.height)) throw failure();
+    const workingSize=policy?fitWorkingSize(actual,policy):expectedWorking!;
+    const resized=actual.width!==workingSize.width||actual.height!==workingSize.height;
     canvas = document.createElement('canvas'); canvas.width=workingSize.width; canvas.height=workingSize.height;
     const context = canvas.getContext('2d'); if (!context) throw failure();
     context.drawImage(image,0,0,canvas.width,canvas.height);

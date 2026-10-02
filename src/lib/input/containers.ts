@@ -24,19 +24,23 @@ export async function webpSize(f:Blob):Promise<Size>{
 export async function bmffSize(f:Blob):Promise<Size>{
  const b=await brands(f);if(b.some(x=>['avis','msf1','hevc','hevx'].includes(x)))throw failure();
  let boxes=0,visible=0,size:Size|undefined;
- async function walk(start:number,end:number,depth:number):Promise<void>{
-  if(depth>5)throw failure();
+ async function walk(start:number,end:number,depth:number,itemsOnly=false):Promise<number>{
+  if(depth>5||start>end)throw failure();let entries=0;
+  const localRead=(o:number,n:number)=>{if(o+n>end)throw failure();return read(f,o,n);};
   for(let o=start;o<end;){
-   if(++boxes>4096)throw failure();const h=await read(f,o,8),n=h.getUint32(0),t=fourcc(h,4);
+   if(++boxes>4096)throw failure();const h=await localRead(o,8),n=h.getUint32(0),t=fourcc(h,4);
+   if(itemsOnly&&t!=='infe')throw failure();entries++;
    // Deliberately no extended/zero-sized boxes: bounded selected still subset.
    if(n<8||o+n>end)throw failure();const p=o+8;
-   if(t==='meta')await walk(p+4,o+n,depth+1);
+   const payload=(length:number)=>{if(p+length>o+n)throw failure();return localRead(p,length);};
+   if(t==='meta'){await payload(4);await walk(p+4,o+n,depth+1);}
    else if(t==='iprp'||t==='ipco')await walk(p,o+n,depth+1);
-   else if(t==='iinf'){const d=await read(f,p,8);const v=d.getUint8(0);if(v>1)throw failure();await walk(p+(v===0?6:8),o+n,depth+1);}
-   else if(t==='infe'){const d=await read(f,p,4);if(d.getUint8(0)<2||d.getUint8(0)>3)throw failure();if(!(d.getUint32(0)&1))visible++;}
-   else if(t==='ispe'){if(n!==20)throw failure();const d=await read(f,p,12);const s={width:d.getUint32(4),height:d.getUint32(8)};if(!size||s.width*s.height>size.width*size.height)size=s;}
+   else if(t==='iinf'){const v=(await payload(4)).getUint8(0);if(v>1)throw failure();const d=await payload(v===0?6:8),count=v===0?d.getUint16(4):d.getUint32(4);if(count>4096||await walk(p+(v===0?6:8),o+n,depth+1,true)!==count)throw failure();}
+   else if(t==='infe'){const d=await payload(4),v=d.getUint8(0);if(v<2||v>3)throw failure();const prefix=v===2?12:14;await payload(prefix+1);const name=await payload(Math.min(o+n-p,65536));let terminator=false;for(let i=prefix;i<name.byteLength;i++)if(name.getUint8(i)===0){terminator=true;break;}if(!terminator)throw failure();if(!(d.getUint32(0)&1))visible++;}
+   else if(t==='ispe'){if(n!==20)throw failure();const d=await payload(12);const s={width:d.getUint32(4),height:d.getUint32(8)};if(!size||s.width*s.height>size.width*size.height)size=s;}
    o+=n;
   }
+  return entries;
  }
  await walk(0,f.size,0);if(!size||visible!==1)throw failure();return size;
 }

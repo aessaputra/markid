@@ -82,6 +82,13 @@ async function tiffOrientation(file: Blob, base: number, length: number): Promis
 }
 /** Reads IFD0 orientation only, never transforms pixels. Invalid metadata fails closed. */
 export async function readOrientation(file: Blob, format: string): Promise<number> {
+  if (format === 'webp') {
+    let orientation=1,seen=false;
+    for(let o=12;o<file.size;){const h=await bytes(file,o,8),n=h.getUint32(4,true);if(o+8+n+n%2>file.size)throw invalid();
+      if(h.getUint32(0)===0x45584946){if(seen)throw invalid();seen=true;const d=await bytes(file,o+8,Math.min(n,6));const prefix=d.byteLength===6&&d.getUint32(0)===0x45786966&&d.getUint16(4)===0?6:0;orientation=await tiffOrientation(file,o+8+prefix,n-prefix);}
+      o+=8+n+n%2;
+    }return orientation;
+  }
   if (format === 'png') {
     if (await identify(file) !== 'png') throw invalid();
     let offset = 8, orientation = 1, seen = false;
