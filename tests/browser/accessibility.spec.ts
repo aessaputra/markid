@@ -17,7 +17,7 @@ for(const colorScheme of ['light','dark'] as const) for(const width of [320,1280
  await page.getByLabel('Watermark text').focus();await page.keyboard.press('ControlOrMeta+a');await page.keyboard.type('Keyboard watermark');
  await page.keyboard.press('Tab');await expect(page.getByLabel('Size',{exact:true})).toBeFocused();
  await page.getByRole('button',{name:'Right',exact:true}).focus();await page.keyboard.press('Enter');await expect(page.getByRole('button',{name:'Right',exact:true})).toHaveAttribute('aria-pressed','true');
- await page.getByLabel('Angle',{exact:true}).focus();await page.keyboard.press('ArrowRight');await expect(page.getByLabel('Angle',{exact:true})).toHaveValue('1');
+ await page.getByLabel('Angle',{exact:true}).focus();await page.keyboard.press('ArrowRight');await expect(page.getByLabel('Angle',{exact:true})).toHaveValue('-44');
  await scan('image-editor');
  await page.getByRole('button',{name:'Preview',exact:true}).focus();await page.keyboard.press('Enter');
  await expect(page.getByRole('button',{name:'Download',exact:true})).toBeEnabled();await scan('image-result');

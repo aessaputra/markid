@@ -10,7 +10,7 @@ function precisePreview(page: Page) {
     const source=await loadSource(new File([await (await fetch('/tests/fixtures/images/exif-6.png')).arrayBuffer()],'x.png'));
     const canvas=node as HTMLCanvasElement;
     const viewport={width:canvas.getBoundingClientRect().width,height:canvas.getBoundingClientRect().height};
-    const mark={text:(document.querySelector('#text') as HTMLTextAreaElement).value,mode:'tiled',sizeRatio:.05,x:.5,y:.5,angle:0,opacity:.35,color:'#18181b',gapX:37,gapY:123};
+    const mark={text:(document.querySelector('#text') as HTMLTextAreaElement).value,mode:'tiled',sizeRatio:.05,x:.5,y:.5,angle:-45,opacity:.3,color:'#888888',gapX:37,gapY:123};
     const bitmap=await renderWatermark(mark,source.size);
     const cache=await createPreviewCache(source,viewport,devicePixelRatio);
     const expected=document.createElement('canvas');expected.width=canvas.width;expected.height=canvas.height;

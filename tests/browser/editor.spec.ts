@@ -1,5 +1,35 @@
 import { expect, test } from '@playwright/test';
 const portrait = 'tests/fixtures/images/exif-6.png';
+for (const state of ['initial', 'Reset']) test(`${state} watermark defaults keep the approved style and placement`, async ({page}) => {
+  await page.goto('/');
+  await page.locator('input[type=file]').setInputFiles(portrait);
+  if (state === 'Reset') {
+    await page.getByLabel('Watermark text').fill('Changed');
+    for (const [name, value] of [['Size','12'],['Opacity','80'],['Angle','45']]) {
+      await page.getByLabel(name,{exact:true}).fill(value);
+      await page.getByLabel(name,{exact:true}).press('Enter');
+    }
+    await page.getByLabel('Color',{exact:true}).fill('#008844');
+    await page.getByRole('button',{name:'Top left',exact:true}).click();
+    await page.getByRole('button',{name:'Tiled',exact:true}).click();
+    for (const name of ['Horizontal gap value','Vertical gap value']) {
+      await page.getByRole('spinbutton',{name,exact:true}).fill('100');
+      await page.getByRole('spinbutton',{name,exact:true}).press('Enter');
+    }
+    await page.getByRole('button',{name:'Reset',exact:true}).click();
+  }
+  const stamp = await page.evaluate(() => new Date().toLocaleDateString('en-CA'));
+  await expect(page.getByLabel('Watermark text')).toHaveValue(`For verification only, ${stamp}`);
+  await expect(page.getByLabel('Size',{exact:true})).toHaveValue('5');
+  await expect(page.getByLabel('Opacity',{exact:true})).toHaveValue('30');
+  await expect(page.getByLabel('Color',{exact:true})).toHaveValue('#888888');
+  await expect(page.getByLabel('Angle',{exact:true})).toHaveValue('-45');
+  await expect(page.getByRole('button',{name:'Single',exact:true})).toHaveAttribute('aria-pressed','true');
+  await expect(page.getByRole('button',{name:'Center',exact:true})).toHaveAttribute('aria-pressed','true');
+  await page.getByRole('button',{name:'Tiled',exact:true}).click();
+  await expect(page.getByRole('spinbutton',{name:'Horizontal gap value',exact:true})).toHaveValue('25');
+  await expect(page.getByRole('spinbutton',{name:'Vertical gap value',exact:true})).toHaveValue('75');
+});
 test('editing and reset restores settings without deleting source', async ({page}) => {
   await page.goto('/');
   await page.locator('input[type=file]').setInputFiles(portrait);
@@ -14,11 +44,11 @@ test('editing and reset restores settings without deleting source', async ({page
   const today = new Date(); const stamp = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
   await expect(page.getByLabel('Watermark text')).toHaveValue(`For verification only, ${stamp}`);
   await expect(page.getByLabel('Size', {exact:true})).toHaveValue('5');
-  await expect(page.getByLabel('Opacity', {exact:true})).toHaveValue('35');
-  await expect(page.getByLabel('Color', {exact:true})).toHaveValue('#18181b');
+  await expect(page.getByLabel('Opacity', {exact:true})).toHaveValue('30');
+  await expect(page.getByLabel('Color', {exact:true})).toHaveValue('#888888');
   await expect(page.getByLabel('Font', {exact:true})).toHaveCount(0);
   await expect(page.getByRole('button',{name:'Center',exact:true})).toHaveAttribute('aria-pressed','true');
-  await expect(page.getByLabel('Angle', {exact:true})).toHaveValue('0');
+  await expect(page.getByLabel('Angle', {exact:true})).toHaveValue('-45');
   await expect(page.getByLabel('Image preview')).toHaveAttribute('data-image-width','80');
   await expect(page.getByLabel('Image preview')).toHaveAttribute('data-image-height','120');
   await expect(page.getByRole('button',{name:'Preview',exact:true})).toBeEnabled();
@@ -60,7 +90,7 @@ for(const [width,height] of [[320,568],[390,844],[844,390],[1280,800]]) for(cons
  await page.getByLabel('Watermark text').fill('Keyboard only');await page.getByLabel('Watermark text').focus();await page.keyboard.press('Tab');
  await expect(page.getByLabel('Size',{exact:true})).toBeFocused();
  await page.getByRole('button',{name:'Right',exact:true}).focus();await page.keyboard.press('Enter');await expect(page.getByRole('button',{name:'Right',exact:true})).toHaveAttribute('aria-pressed','true');
- await page.getByLabel('Angle',{exact:true}).focus();await page.keyboard.press('ArrowRight');await expect(page.getByLabel('Angle',{exact:true})).toHaveValue('1');
+ await page.getByLabel('Angle',{exact:true}).focus();await page.keyboard.press('ArrowRight');await expect(page.getByLabel('Angle',{exact:true})).toHaveValue('-44');
  expect(await page.getByLabel('Angle',{exact:true}).evaluate(n => getComputedStyle(n).outlineStyle)).toBe('solid');
  const position=await page.locator('.preview-panel').evaluate(n => getComputedStyle(n).position);
  expect(position).toBe(width >=1024 && height>=760 ? 'sticky':'static');
