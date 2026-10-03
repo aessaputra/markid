@@ -79,7 +79,8 @@
    return toImagePoint({x:event.clientX-bounds.left,y:event.clientY-bounds.top},image.size,viewport);
  }
  function start(event:PointerEvent) {
-   if(disabled || gesture || event.button!==0 || !selection) return;
+   if (disabled || gesture || event.button !== 0 || !selection) return;
+  if (mark.mode === 'tiled' && !(event.target as HTMLElement).closest('.resize-handle')) return;
    const p=point(event), center={x:mark.x*image.size.width,y:mark.y*image.size.height};
    const target=event.target as HTMLElement;
    gesture={id:event.pointerId,mode:target.closest('.resize-handle')?'resize':'move',center,

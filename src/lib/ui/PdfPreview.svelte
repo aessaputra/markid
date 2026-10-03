@@ -24,7 +24,7 @@
 <PdfPager {pageIndex} pageCount={pdf.pageCount} disabled={disabled || loading} onchange={index=>pageIndex=index} />
 <div class="pdf-viewport" use:measure>
 {#if image}
- {#if mark}<EditorPreview {image} {mark} {disabled} {onsize} onwatermark={onwatermark} onposition={p=>onposition({x:p.x/image!.size.width,y:p.y/image!.size.height})} {onerror} />
+ {#if mark}<EditorPreview {image} {mark} {disabled} {onsize} onwatermark={onwatermark} onposition={p => { if (mark?.mode !== 'tiled') onposition({ x: p.x / image!.size.width, y: p.y / image!.size.height }); }} {onerror} />
  {:else}<canvas aria-label="Final PDF preview" class="h-full w-full object-contain" use:paint={image}>Final PDF preview</canvas>{/if}
 {:else}<p>Loading…</p>{/if}
 </div>

@@ -26,7 +26,14 @@
  <RangeField id="opacity" label="Opacity" value={mark.opacity*100} min={0} max={100} onchange={value => update({opacity:value/100})} />
  <RangeField id="rotation" label="Angle" value={mark.angle} min={-180} max={180} onchange={value => update({angle:value})} />
  </div>
- <fieldset class="grid gap-2"><legend>Position</legend>
+ <fieldset class="grid gap-2"><legend>Layout</legend>
+ <div class="flex flex-wrap gap-2" role="group" aria-label="Watermark layout">
+  <button type="button" aria-pressed={(mark.mode ?? 'single') === 'single'} class="pos-btn" onclick={() => update({ mode: 'single' })}>Single</button>
+  <button type="button" aria-pressed={(mark.mode ?? 'single') === 'tiled'} class="pos-btn" onclick={() => update({ mode: 'tiled' })}>Tiled</button>
+ </div>
+ {#if mark.mode === 'tiled'}<p class="text-sm text-muted">Tiled covers the whole page. Position does not apply.</p>{/if}
+</fieldset>
+<fieldset class="grid gap-2" disabled={mark.mode === 'tiled'}><legend>Position</legend>
  <div class="position-grid">
   {#each placed as position (position.label)}
   <button type="button" aria-pressed={selected===position.label} class="pos-btn" onclick={() => update({x:position.x,y:position.y})}>{position.label}</button>
