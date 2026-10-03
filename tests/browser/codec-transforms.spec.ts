@@ -16,15 +16,15 @@ for(const ext of ['webp','avif','heif']) for(const transform of ['rotate','mirro
    const original=window.createImageBitmap;
    if(fallback) window.createImageBitmap=((source: ImageBitmapSource,...args: unknown[])=>source instanceof Blob?Promise.reject(new Error('forced native failure')):original(source,...args as [])) as typeof createImageBitmap;
    let loaded;
-   try {loaded=await loadImage(new File([new Uint8Array(bytes)],'wrong.jpg'),{maxSide:160,maxPixels:8000000});}
+   try {loaded=await loadImage(new File([new Uint8Array(bytes)],'wrong.jpg'));}
    finally {window.createImageBitmap=original;}
    const sample=(source:CanvasImageSource,w:number,h:number)=>{const c=document.createElement('canvas');c.width=w;c.height=h;const ctx=c.getContext('2d')!;ctx.drawImage(source,0,0,w,h);return [[.25,.25],[.75,.25],[.25,.75],[.75,.75]].map(([x,y])=>[...ctx.getImageData(Math.floor(x*w),Math.floor(y*h),1,1).data]);};
    const pixels=sample(loaded.source,loaded.size.width,loaded.size.height);
-   const exported=await exportImage(loaded,{text:'Test',fontFamily:'Geist',sizeRatio:.05,x:.5,y:.5,angle:0,opacity:0,color:'#000000'}, {forceMain:true});
+   const exported=await exportImage(loaded,{text:'Test',sizeRatio:.05,x:.5,y:.5,angle:0,opacity:0,color:'#000000'}, {forceMain:true});
    const jpeg=await original(exported.blob);const jpegPixels=sample(jpeg,jpeg.width,jpeg.height);const size=[loaded.size.width,loaded.size.height],jpegSize=[jpeg.width,jpeg.height];jpeg.close();loaded.dispose();
    return {size,jpegSize,pixels,jpegPixels};
   },{bytes:[...readFileSync(`tests/fixtures/codecs/${transform}.${ext}`)],fallback});
-  expect(actual.size).toEqual(transform==='rotate'?[120,160]:[160,120]);expect(actual.jpegSize).toEqual(actual.size);
+  expect(actual.size).toEqual(transform==='rotate'?[240,320]:[320,240]);expect(actual.jpegSize).toEqual(actual.size);
   const colors=(pixels:number[][])=>pixels.map(p=>p[0]>180?(p[1]>180?'Y':'R'):p[1]>90?'G':'B');
   const expected=transform==='rotate'?['B','R','Y','G']:['G','R','Y','B'];expect(colors(actual.pixels)).toEqual(expected);expect(colors(actual.jpegPixels)).toEqual(expected);
  });

@@ -13,5 +13,5 @@ test('page cleanup and canvas release on context/render construction failures an
  });expect(result).toEqual({cleaned:4,released:true,count:3});
 });
 test('valid predefined CMap is actually requested',async({page})=>{
- let requested=false;page.on('request',r=>{if(r.url().includes('/cmaps/90ms-RKSJ-H.bcmap'))requested=true;});await page.goto('/');await page.getByLabel('Choose file').setInputFiles('tests/fixtures/pdf/cmap.pdf');await expect(page.getByText('Page 1 of 1')).toBeVisible();expect(requested).toBe(true);
+ let requested=false;page.on('request',r=>{if(r.url().includes('/cmaps/90ms-RKSJ-H.bcmap'))requested=true;});await page.goto('/');await page.getByLabel('Choose file').setInputFiles('tests/fixtures/pdf/cmap.pdf');await expect(page.getByLabel('Image preview')).toBeVisible();expect(requested).toBe(true);
 });

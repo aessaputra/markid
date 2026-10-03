@@ -1,5 +1,4 @@
 /// <reference lib="webworker" />
-import geist from '@fontsource/geist/files/geist-latin-400-normal.woff2?url';
 import { renderJpeg } from './export-render';
 import { EXPORT_ERROR } from './export-policy';
 import type { Size, Watermark } from '../editor/types';
@@ -9,18 +8,15 @@ export type ExportResponse={id:number;revision:number;blob:Blob;size:Size} | {id
 scope.onmessage=async ({data}:MessageEvent<ExportRequest>)=>{
  const {id,revision,image,size,mark}=data;
  try {
-  // Capability exceptions are unsupported; font loading and encoding below remain errors.
+  // Capability exceptions are unsupported; rendering and encoding below remain errors.
   let supported=false;
   try {
-   supported=typeof OffscreenCanvas!=='undefined' && !!new OffscreenCanvas(1,1).getContext('2d') && typeof FontFace!=='undefined' && !!scope.fonts && typeof OffscreenCanvas.prototype.convertToBlob==='function';
+   supported=typeof OffscreenCanvas!=='undefined' && !!new OffscreenCanvas(1,1).getContext('2d') && typeof OffscreenCanvas.prototype.convertToBlob==='function';
   } catch { /* Worker capability can differ from the page's successful probe. */ }
   if(!supported) {
    scope.postMessage({id,revision,error:EXPORT_ERROR,unsupported:true} satisfies ExportResponse);return;
   }
-  // Workers have their own FontFaceSet; no dependency on the document's CSS faces.
-  if(mark.fontFamily!=='Geist') throw new Error('Watermark font could not be loaded.');
-  try {const face=await new FontFace('Geist',`url(${geist})`).load();scope.fonts.add(face);}
-  catch(cause) {throw new Error('Watermark font could not be loaded.',{cause});}
+  // System font needs no registration: worker Canvas resolves the same stack as the page.
   const result=await renderJpeg(image,size,mark,true);
   scope.postMessage({id,revision,...result} satisfies ExportResponse);
  } catch(error) {scope.postMessage({id,revision,error:error instanceof Error?error.message:EXPORT_ERROR} satisfies ExportResponse);}

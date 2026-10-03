@@ -5,7 +5,6 @@ test('final decoded preview precedes real JPEG download; back retains source and
  await page.goto('/');
  await page.getByLabel('Choose file', {exact:true}).setInputFiles('tests/fixtures/images/alpha.png');
  await page.getByLabel('Watermark text').fill('For verification only\nÁgj');
- await page.getByLabel('Purpose',{exact:true}).fill('employment');
  await page.getByRole('button', {name:'Preview',exact:true}).click();
  const downloadButton=page.getByRole('button',{name:'Download',exact:true});
  await expect(downloadButton).toBeEnabled();
@@ -15,7 +14,7 @@ test('final decoded preview precedes real JPEG download; back retains source and
  expect(preview.width).toBeGreaterThan(0);
  const [download]=await Promise.all([page.waitForEvent('download'), downloadButton.click()]);
  const bytes=await readFile((await download.path())!);
- expect(bytes.length).toBeGreaterThan(0);expect(bytes.length).toBeLessThanOrEqual(1048576);
+ expect(bytes.length).toBeGreaterThan(0);
  expect([...bytes.subarray(0,2)]).toEqual([255,216]);
  const decoded=await page.evaluate(async ({bytes,url})=>{
   const actual=new Blob([new Uint8Array(bytes)],{type:'image/jpeg'});
@@ -32,7 +31,6 @@ test('final decoded preview precedes real JPEG download; back retains source and
  [137,217,167,255].forEach((v,i)=>expect(Math.abs(decoded.pixel[i]-v)).toBeLessThanOrEqual(2));expect(decoded.same).toBe(true);
  await page.getByRole('button',{name:'Back to edit'}).click();
  await expect(page.getByLabel('Watermark text')).toHaveValue('For verification only\nÁgj');
- await expect(page.getByLabel('Purpose',{exact:true})).toHaveValue('employment');
  await expect(page.getByLabel('Image preview')).toHaveAttribute('data-image-width',String(preview.width));
  await page.getByLabel('Watermark text').fill('Changed');
  await expect(downloadButton).toHaveCount(0);
@@ -49,7 +47,7 @@ for (const area of [{width:600,height:400},{width:400,height:600}]) test(`real w
   const out=[];
   try {
    for(const angle of [-180,0,45,180]) for(const opacity of [0,.5]) {
-    const mark={text:'Ágj\nFor verification only',fontFamily:'Geist',sizeRatio:.08,x:.32,y:.63,angle,opacity,color:'#ff0000'};
+    const mark={text:'Ágj\nFor verification only',sizeRatio:.08,x:.32,y:.63,angle,opacity,color:'#ff0000'};
     const worker=await exportImage(image,mark),main=await exportImage(image,mark,{forceMain:true});
     async function pixels(blob:Blob) {
      const decoded=await createImageBitmap(blob);const c=document.createElement('canvas');c.width=decoded.width;c.height=decoded.height;
@@ -71,10 +69,10 @@ for (const area of [{width:600,height:400},{width:400,height:600}]) test(`real w
   } finally {source.close();}
  },area);
  expect(results.sourceWidth).toBe(area.width);
- for(const r of results.out){expect(r.max).toBeLessThanOrEqual(2);expect(r.oracleMax).toBeLessThanOrEqual(2);if(r.opacity===0)expect(r.ink).toBe(0);if(r.opacity!==0)expect(r.ink).toBeGreaterThan(100);expect(r.mime).toBe('image/jpeg');expect(r.bytes).toBeLessThanOrEqual(1048576);expect(r.size).toEqual(area);}
+ for(const r of results.out){expect(r.max).toBeLessThanOrEqual(2);expect(r.oracleMax).toBeLessThanOrEqual(2);if(r.opacity===0)expect(r.ink).toBe(0);if(r.opacity!==0)expect(r.ink).toBeGreaterThan(100);expect(r.mime).toBe('image/jpeg');expect(r.bytes).toBeGreaterThan(0);expect(r.size).toEqual(area);}
 });
 
-test('deterministic noisy working source compresses with bounded fresh proportional candidates',async({page})=>{
+test('noisy original source encodes above 1MiB with worker/fallback parity',async({page})=>{
  await page.goto('/');
  const result=await page.evaluate(async()=>{
   const {exportImage}=await import(String('/src/lib/image/export.ts'));
@@ -83,7 +81,7 @@ test('deterministic noisy working source compresses with bounded fresh proportio
   for(let i=0;i<noise.data.length;i+=4){for(let k=0;k<3;k++){seed=(Math.imul(seed,1664525)+1013904223)>>>0;noise.data[i+k]=seed>>>24;}noise.data[i+3]=255;}
   ctx.putImageData(noise,0,0);
   const source=await createImageBitmap(c);const image={kind:'image',source,size:{width:c.width,height:c.height},resized:false,dispose(){}};
-  const mark={text:'For verification only',fontFamily:'Geist',sizeRatio:.06,x:.5,y:.5,angle:45,opacity:.8,color:'#ffffff'};
+  const mark={text:'For verification only',sizeRatio:.06,x:.5,y:.5,angle:45,opacity:.8,color:'#ffffff'};
   const out=[];
   for(const forceMain of [false,true]) {
    const r=await exportImage(image,mark,{forceMain});const bitmap=await createImageBitmap(r.blob);
@@ -91,39 +89,27 @@ test('deterministic noisy working source compresses with bounded fresh proportio
   }
   source.close();return out;
  });
- for(const r of result){expect(r.bytes).toBeGreaterThan(0);expect(r.bytes).toBeLessThanOrEqual(1048576);expect(r.mime).toBe('image/jpeg');expect(r.size).toEqual(r.decoded);expect(r.size!.width).toBeLessThan(2400);expect(r.size!.width/r.size!.height).toBe(.75);}
+ for(const r of result){expect(r.bytes).toBeGreaterThan(0);expect(r.bytes).toBeGreaterThan(1048576);expect(r.mime).toBe('image/jpeg');expect(r.size).toEqual(r.decoded);expect(r.size).toEqual({width:2400,height:3200});expect(r.size!.width/r.size!.height).toBe(.75);}
  expect(result[0]).toEqual(result[1]);
 });
 
-for(const mode of ['null','empty','mime','throw','font','corrupt','oversize'] as const) test(`main fallback ${mode} failure returns no result`,async({page})=>{
+for(const mode of ['null','empty','mime','throw','corrupt','large-corrupt'] as const) test(`main fallback ${mode} failure returns no result`,async({page})=>{
  await page.goto('/');
  const error=await page.evaluate(async mode=>{
   const {exportImage}=await import(String('/src/lib/image/export.ts'));
   const c=document.createElement('canvas');c.width=c.height=100;c.getContext('2d');
   const image={kind:'image',source:c,size:{width:100,height:100},resized:false,dispose(){}};
-  const mark={text:'For verification only',fontFamily:mode==='font'?'MissingFont':'Geist',sizeRatio:.05,x:.5,y:.5,angle:0,opacity:0,color:'#000'};
+  const mark={text:'For verification only',sizeRatio:.05,x:.5,y:.5,angle:0,opacity:0,color:'#000'};
   const original=HTMLCanvasElement.prototype.toBlob;
   HTMLCanvasElement.prototype.toBlob=function(callback){
    if(mode==='throw') throw new Error('codec unavailable');
-   callback(mode==='null'?null:new Blob(mode==='empty'?[]:mode==='oversize'?[new Uint8Array(1048577)]:['not jpeg'],{type:mode==='mime'?'image/png':'image/jpeg'}));
+   callback(mode==='null'?null:new Blob(mode==='empty'?[]:mode==='large-corrupt'?[new Uint8Array(1048577)]:['not jpeg'],{type:mode==='mime'?'image/png':'image/jpeg'}));
   };
   try {await exportImage(image,mark,{forceMain:true});return 'unexpected success';}
   catch(e){return (e as Error).message;}finally {HTMLCanvasElement.prototype.toBlob=original;}
  },mode);
- if(mode==='corrupt') expect(error).not.toBe('unexpected success');
- else expect(error).toBe(mode==='font'?'Watermark font could not be loaded.':mode==='throw'?'codec unavailable':'Export failed. Try again.');
-});
-
-test('worker font registration failure does not silently use main-thread or another font',async({page})=>{
- await page.goto('/');
- const workers: string[]=[];page.on('worker',worker=>workers.push(worker.url()));
- const error=await page.evaluate(async()=>{
-  const {exportImage}=await import(String('/src/lib/image/export.ts'));
-  const c=document.createElement('canvas');c.width=c.height=100;c.getContext('2d');
-  try {await exportImage({kind:'image',source:c,size:{width:100,height:100},resized:false,dispose(){}},{text:'Only',fontFamily:'MissingFont',sizeRatio:.1,x:.5,y:.5,angle:0,opacity:1,color:'#000'});return 'unexpected success';}
-  catch(e){return (e as Error).message;}
- });
- expect(error).toBe('Watermark font could not be loaded.');expect(workers.some(url=>url.includes('export.worker'))).toBe(true);
+ if(mode==='corrupt'||mode==='large-corrupt') expect(error).not.toBe('unexpected success');
+ else expect(error).toBe(mode==='throw'?'codec unavailable':'Export failed. Try again.');
 });
 
 test('capability fallback yields UI, locks file/style/drag and releases final URL on back',async({page})=>{
@@ -137,9 +123,15 @@ test('capability fallback yields UI, locks file/style/drag and releases final UR
   URL.revokeObjectURL=url=>{(window as unknown as {revoked:string[]}).revoked.push(url);revoke(url);};
  });
  await page.goto('/');await page.getByLabel('Choose file',{exact:true}).setInputFiles('tests/fixtures/images/exif-1.jpg');
- await page.getByLabel('Watermark text').fill('Only');await page.getByRole('button',{name:'Preview',exact:true}).click();
+ await page.getByLabel('Watermark text').fill('Only');await expect(page.locator('.watermark-selection')).toBeVisible();
+ const anchor=await page.locator('.watermark-selection').getAttribute('style');
+ await page.getByRole('button',{name:'Preview',exact:true}).click();
  await expect(page.getByText('Processing…',{exact:true})).toBeVisible();
- await expect(page.getByLabel('Choose file',{exact:true})).toBeDisabled();await expect(page.getByRole('button',{name:'Choose file',exact:true})).toBeDisabled();
+ await expect(page.locator('.watermark-selection')).toHaveClass(/locked/);
+ await page.locator('.watermark-selection').dispatchEvent('pointerdown',{pointerId:1,button:0});
+ await page.locator('.preview-frame').dispatchEvent('pointermove',{pointerId:1,clientX:20,clientY:20});
+ expect(await page.locator('.watermark-selection').getAttribute('style')).toBe(anchor);
+ await expect(page.getByLabel('Choose file',{exact:true})).toBeDisabled();await expect(page.getByRole('button',{name:'Change file',exact:true})).toBeDisabled();
  await expect(page.getByLabel('Watermark text')).toBeDisabled();await expect(page.getByRole('button',{name:'Reset',exact:true})).toBeDisabled();
  await expect(page.getByRole('button',{name:'Download',exact:true})).toBeEnabled();
  const url=await page.getByAltText('Final JPEG preview').getAttribute('src');

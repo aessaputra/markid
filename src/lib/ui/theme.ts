@@ -1,5 +1,5 @@
 export type Theme = 'system' | 'light' | 'dark';
-export const themeKey = 'markid-theme';
+const themeKey = 'markid-theme';
 export function readTheme(): Theme {
  try {const value=localStorage.getItem(themeKey);if(value==='light' || value==='dark') return value;} catch { /* Storage is optional. */ }
  return 'system';

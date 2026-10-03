@@ -4,7 +4,7 @@ import { assertJpeg, EXPORT_ERROR } from './export-policy';
 import { renderJpeg } from './export-render';
 let sequence=0;
 function workerAvailable(): boolean {
- try {return typeof Worker!=='undefined' && typeof OffscreenCanvas!=='undefined' && !!new OffscreenCanvas(1,1).getContext('2d') && typeof FontFace!=='undefined';}
+ try {return typeof Worker!=='undefined' && typeof OffscreenCanvas!=='undefined' && !!new OffscreenCanvas(1,1).getContext('2d');}
  catch {return false;}
 }
 async function inWorker(source:ImageBitmap,image:LoadedImage,mark:Watermark,id:number,revision:number): Promise<ExportResponse> {

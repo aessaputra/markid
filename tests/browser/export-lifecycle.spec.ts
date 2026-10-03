@@ -17,24 +17,11 @@ test('worker ignores stale protocol messages and closes cloned resources after r
   const c=document.createElement('canvas');c.width=c.height=100;c.getContext('2d');
   const source=await createImageBitmap(c);
   try {
-   const r=await exportImage({kind:'image',source,size:{width:100,height:100},resized:false,dispose(){}},{text:'Only',fontFamily:'Geist',sizeRatio:.1,x:.5,y:.5,angle:0,opacity:1,color:'#000'},{revision:42});
+   const r=await exportImage({kind:'image',source,size:{width:100,height:100},resized:false,dispose(){}},{text:'Only',sizeRatio:.1,x:.5,y:.5,angle:0,opacity:1,color:'#000'},{revision:42});
    return {mime:r.blob.type,size:r.size,sourceWidth:source.width};
   } finally {source.close();}
  });
  expect(result).toEqual({mime:'image/jpeg',size:{width:100,height:100},sourceWidth:100});
-});
-
-test('local worker FontFace asset load failure remains explicit',async({page})=>{
- await page.goto('/');
- // Page CSS is already loaded; only the worker's explicit FontFace URL is blocked.
- await page.route('**/geist-latin-400-normal.woff2*',route=>route.request().resourceType()==='font'?route.abort():route.continue());
- const error=await page.evaluate(async()=>{
-  const {exportImage}=await import(String('/src/lib/image/export.ts'));
-  const c=document.createElement('canvas');c.width=c.height=100;c.getContext('2d');
-  try {await exportImage({kind:'image',source:c,size:{width:100,height:100},resized:false,dispose(){}},{text:'Only',fontFamily:'Geist',sizeRatio:.1,x:.5,y:.5,angle:0,opacity:1,color:'#000'});return 'unexpected success';}
-  catch(e){return (e as Error).message;}
- });
- expect(error).toBe('Watermark font could not be loaded.');
 });
 
 for(const probe of ['constructor','context'] as const) test(`worker-only ${probe} probe exception selects real HTML Canvas JPEG fallback`,async({page})=>{
@@ -57,7 +44,7 @@ for(const probe of ['constructor','context'] as const) test(`worker-only ${probe
    const {exportImage}=await import(String('/src/lib/image/export.ts'));
    const c=document.createElement('canvas');c.width=200;c.height=100;
    const context=c.getContext('2d')!;context.fillStyle='#fff';context.fillRect(0,0,200,100);
-   const r=await exportImage({kind:'image',source:c,size:{width:200,height:100},resized:false,dispose(){}},{text:'Only',fontFamily:'Geist',sizeRatio:.1,x:.5,y:.5,angle:0,opacity:1,color:'#000'});
+   const r=await exportImage({kind:'image',source:c,size:{width:200,height:100},resized:false,dispose(){}},{text:'Only',sizeRatio:.1,x:.5,y:.5,angle:0,opacity:1,color:'#000'});
    const bytes=new Uint8Array(await r.blob.arrayBuffer());
    const decoded=await createImageBitmap(r.blob);
    const size={width:decoded.width,height:decoded.height};decoded.close();
@@ -65,12 +52,13 @@ for(const probe of ['constructor','context'] as const) test(`worker-only ${probe
   } finally {HTMLCanvasElement.prototype.toBlob=native;}
  });
  expect(injected).toBe(1);expect(result.pageOffscreenWorks).toBe(true);expect(result.encodes).toBeGreaterThan(0);
- expect(result.mime).toBe('image/jpeg');expect(result.bytes).toBeGreaterThan(0);expect(result.bytes).toBeLessThanOrEqual(1_048_576);
+ expect(result.mime).toBe('image/jpeg');expect(result.bytes).toBeGreaterThan(0);
  expect(result.signature).toEqual([255,216,255]);expect(result.size).toEqual({width:200,height:100});
  console.log(`worker ${probe} probe fallback JPEG`,result);
 });
 
 test('actual worker encode exception remains explicit without main Canvas fallback',async({page})=>{
+ const workers:string[]=[];page.on('worker',worker=>workers.push(worker.url()));
  await page.route('**/src/lib/image/export.worker.ts*',async route=>{
   const response=await route.fetch();
   await route.fulfill({response,body:"self.OffscreenCanvas.prototype.convertToBlob=async function(){throw new Error('worker encode failed');};\n"+await response.text()});
@@ -83,9 +71,10 @@ test('actual worker encode exception remains explicit without main Canvas fallba
   try {
    const {exportImage}=await import(String('/src/lib/image/export.ts'));
    const c=document.createElement('canvas');c.width=c.height=100;c.getContext('2d');
-   try {await exportImage({kind:'image',source:c,size:{width:100,height:100},resized:false,dispose(){}},{text:'Only',fontFamily:'Geist',sizeRatio:.1,x:.5,y:.5,angle:0,opacity:1,color:'#000'});return {error:'unexpected success',encodes};}
+   try {await exportImage({kind:'image',source:c,size:{width:100,height:100},resized:false,dispose(){}},{text:'Only',sizeRatio:.1,x:.5,y:.5,angle:0,opacity:1,color:'#000'});return {error:'unexpected success',encodes};}
    catch(e){return {error:(e as Error).message,encodes};}
   } finally {HTMLCanvasElement.prototype.toBlob=native;}
  });
  expect(result).toEqual({error:'worker encode failed',encodes:0});
+ expect(workers.some(url=>url.includes('export.worker'))).toBe(true);
 });

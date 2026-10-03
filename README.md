@@ -2,7 +2,7 @@
 
 Local, single-file text watermark editor built with Svelte 5, TypeScript, Vite and Canvas. Choose a file, edit the watermark, **Preview** the final encoded result, then **Download**. Images become JPEG; PDFs remain PDFs with a watermark on every page. Changing settings invalidates the previous result; export starts from the original source, not a previous export.
 
-**Experimental local build, not approved for release or distribution.** Physical-device, cross-engine/minimum-browser, quality-policy and embedded-decoder LGPL gates remain blocked. No deployment host has been selected. See [release matrix](docs/testing/release-matrix.md), [codec evidence](docs/testing/codec-report.md) and [PDF evidence](docs/testing/pdf-report.md).
+**Experimental local build, not approved for release or distribution.** Physical-device, cross-engine/minimum-browser and embedded-decoder LGPL gates remain blocked. No deployment host has been selected. See [release matrix](docs/testing/release-matrix.md), [codec evidence](docs/testing/codec-report.md) and [PDF evidence](docs/testing/pdf-report.md).
 
 ## Tested inputs (not universal codec support)
 
@@ -16,9 +16,9 @@ Animated images/collections are outside scope. HDR, color/profile fidelity, arbi
 
 ## Limits and safety
 
-Input maximum: **10 MB = 10,000,000 bytes**. JPEG output maximum: **1 MiB = 1,048,576 bytes**. PDF output has no JPEG cap and no compression promise. Empty/corrupt files fail explicitly. Large photos are proportionally resized rather than rejected merely for exceeding 8MP.
+No fixed input byte, photo megapixel/side, or JPEG output byte limit. Photos retain their full orientation-normalized decoded dimensions. JPEG export composes once from that source and encodes once at quality .92, without staged resizing or compression. Available browser/device capacity determines what can be processed; large files can fail or exhaust memory. Empty/corrupt files and invalid dimensions still fail explicitly. PDF output has no compression promise.
 
-Working 4096px/8,000,000-pixel policy, JPEG scales 1/.85/.70/.55 with qualities .92/.85/.78/.70 (at most 16 attempts), and PDF watermark layout at 1600×1600 are **experimental**, not approved quality minima or mobile-memory guarantees. Exhausted JPEG candidates produce an error, not a partial download. The current byte/dimension checks do not certify readability; inspect the final result before using it. Synthetic small-text evidence does not establish a universal readable minimum.
+PDF raster previews adapt to the actual displayed page fit at twice its CSS dimensions, without the former 2MP/1600px/scale-2 caps. This preview sampling does not rasterize original PDF page content on export; the separate watermark asset layout remains unchanged. Full-resolution processing is not an unlimited-capacity, mobile-memory or readability guarantee. Inspect the final result before using it; synthetic small-text evidence does not establish a universal readable minimum.
 
 Files, names and watermark text are processed locally; no uploads, analytics, accounts, backend or automatic file persistence. Only an explicit theme preference is saved. Lazy decoder/PDF assets are fetched from the application's own origin. Downloads happen only when requested. This is not an offline/PWA guarantee: initial and lazy assets need a server. Browsers/OS may retain memory, caches or downloaded files; instant physical erasure is not promised. Hosting can log ordinary access metadata. Watermarks are not redaction, encryption or tamper-proof protection.
 
@@ -53,4 +53,4 @@ The CSP suite builds automatically and serves on `http://127.0.0.1:5174`. It tes
 
 No host was selected, deployed or published. `scripts/serve-production.mjs` is a loopback verification artifact, not an HTTPS production service. Before any release, choose a host with the user, implement its actual header/cache configuration, verify HTTPS and lazy worker MIME, archive the previous immutable build, rehearse that host's exact rollback command and rerun the privacy/CSP suite against it. Those host-specific commands cannot truthfully be supplied yet.
 
-See [third-party notices](THIRD_PARTY_NOTICES.md). Geist is local OFL; PDF libraries are MIT/Apache-2.0. The embedded HEIC decoder is LGPL-3.0: notices/npm audit are **not** corresponding-source, build/relink or legal-compliance evidence. Distribution remains blocked. BentoPDF (alam00000/bentopdf, AGPL-3.0) was a research reference; no source was copied/adapted. Reference repositories and throwaway spikes are not release artifacts.
+See [third-party notices](THIRD_PARTY_NOTICES.md). UI and watermark use the platform system font; PDF libraries are MIT/Apache-2.0. The embedded HEIC decoder is LGPL-3.0: notices/npm audit are **not** corresponding-source, build/relink or legal-compliance evidence. Distribution remains blocked. BentoPDF (alam00000/bentopdf, AGPL-3.0) was a research reference; no source was copied/adapted. Reference repositories and throwaway spikes are not release artifacts.

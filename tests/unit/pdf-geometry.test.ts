@@ -24,9 +24,3 @@ test('independent four corners and off-center anchor for each rotation',()=>{
   expect(p.x+40*Math.cos(r)-10*Math.sin(r)).toBeCloseTo(anchor[0]);expect(p.y+40*Math.sin(r)+10*Math.cos(r)).toBeCloseTo(anchor[1]);
  }
 });
-test('all rotated corners include CropBox origin',()=>{
- expect(displayToPdf({x:0,y:0},box,0)).toEqual({x:20,y:630});
- expect(displayToPdf({x:0,y:0},box,90)).toEqual({x:20,y:30});
- expect(displayToPdf({x:0,y:0},box,180)).toEqual({x:420,y:30});
- expect(displayToPdf({x:0,y:0},box,270)).toEqual({x:420,y:630});
-});

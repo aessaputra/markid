@@ -1,14 +1,14 @@
 import type { ExportResult, LoadedSource, Watermark } from './types';
 /** Snapshot/revision ownership; stale finalizers cannot clear a newer job. */
-export class ExportController<T extends LoadedSource = LoadedSource> {
+export class ExportController {
  result:ExportResult | null=null;
  processing=false;
  error='';
  revision=0;
  private disposed=false;
- constructor(private readonly exporter:(image:T,mark:Watermark,options:{revision:number})=>Promise<ExportResult>,private readonly changed:()=>void=()=>{}) {}
+ constructor(private readonly exporter:(image:LoadedSource,mark:Watermark,options:{revision:number})=>Promise<ExportResult>,private readonly changed:()=>void=()=>{}) {}
  invalidate():void {++this.revision;this.result?.dispose();this.result=null;this.error='';this.changed();}
- async prepare(image:T,mark:Watermark):Promise<void> {
+ async prepare(image:LoadedSource,mark:Watermark):Promise<void> {
   if(this.disposed || this.processing || !mark.text.trim()) return;
   this.invalidate();const revision=this.revision;
   this.processing=true;this.changed();
@@ -29,6 +29,7 @@ export class ExportController<T extends LoadedSource = LoadedSource> {
 /** Owns successful resources; pending decoders retain their resources until settled. */
 export class ImageController {
   current: LoadedSource | null = null;
+  fileName = '';
   revision = 0;
   loading = false;
   error = '';
@@ -43,6 +44,7 @@ export class ImageController {
       if (this.disposed || revision !== this.revision) { next.dispose(); return; }
       const old = this.current;
       this.current = next;
+      this.fileName = file.name;
       old?.dispose();
     } catch (error) {
       if (!this.disposed && revision === this.revision) this.error = error instanceof Error ? error.message : 'Could not open this file. Try a JPG or PNG.';

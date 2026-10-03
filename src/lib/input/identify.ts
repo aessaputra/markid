@@ -1,6 +1,6 @@
 import { brands } from './containers';
 export type InputFormat = 'jpeg' | 'png' | 'webp' | 'avif' | 'heif' | 'pdf';
-export const pngSignature = [137,80,78,71,13,10,26,10];
+const pngSignature = [137,80,78,71,13,10,26,10];
 /** Signatures only: recognized containers still require bounded metadata and decode validation. */
 export async function identify(file: Blob): Promise<InputFormat> {
   const b = new Uint8Array(await file.slice(0, 12).arrayBuffer());

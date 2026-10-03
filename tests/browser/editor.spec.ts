@@ -5,38 +5,35 @@ test('editing and reset restores settings without deleting source', async ({page
   await page.locator('input[type=file]').setInputFiles(portrait);
   await page.getByLabel('Watermark text').fill('For verification only\n2026-10-02');
   await expect(page.getByRole('button', {name:'Preview',exact:true})).toBeEnabled();
-  await page.getByLabel('Size', {exact:true}).fill('12');
+  await page.getByLabel('Size', {exact:true}).fill('12');await page.getByLabel('Size', {exact:true}).press('Enter');
   await page.getByLabel('Opacity', {exact:true}).fill('80');
-  await page.getByText('More options', {exact:true}).click();
   await page.getByLabel('Color', {exact:true}).fill('#008844');
-  await page.getByLabel('Position X').fill('20');
-  await page.getByLabel('Position Y').fill('30');
-  await page.getByLabel('Rotation', {exact:true}).fill('45');
+  await page.getByRole('button', {name:'Top left',exact:true}).click();
+  await page.getByLabel('Angle', {exact:true}).fill('45');
   await page.getByRole('button', {name:'Reset',exact:true}).click();
-  await expect(page.getByLabel('Watermark text')).toHaveValue('');
+  const today = new Date(); const stamp = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  await expect(page.getByLabel('Watermark text')).toHaveValue(`For verification only, ${stamp}`);
   await expect(page.getByLabel('Size', {exact:true})).toHaveValue('5');
   await expect(page.getByLabel('Opacity', {exact:true})).toHaveValue('35');
   await expect(page.getByLabel('Color', {exact:true})).toHaveValue('#18181b');
-  await expect(page.getByLabel('Font', {exact:true})).toHaveValue('Geist');
-  await expect(page.getByLabel('Position X')).toHaveValue('50');
-  await expect(page.getByLabel('Position Y')).toHaveValue('50');
-  await expect(page.getByLabel('Rotation', {exact:true})).toHaveValue('0');
+  await expect(page.getByLabel('Font', {exact:true})).toHaveCount(0);
+  await expect(page.getByRole('button',{name:'Center',exact:true})).toHaveAttribute('aria-pressed','true');
+  await expect(page.getByLabel('Angle', {exact:true})).toHaveValue('0');
   await expect(page.getByLabel('Image preview')).toHaveAttribute('data-image-width','80');
   await expect(page.getByLabel('Image preview')).toHaveAttribute('data-image-height','120');
-  await expect(page.getByRole('button',{name:'Preview',exact:true})).toBeDisabled();
+  await expect(page.getByRole('button',{name:'Preview',exact:true})).toBeEnabled();
 });
 
-test('preset, replacement and failed preparation preserve edits', async ({page}) => {
+test('replacement and failed preparation preserve direct text edits', async ({page}) => {
  await page.goto('/'); await page.locator('input[type=file]').setInputFiles(portrait);
- await page.getByLabel('Purpose',{exact:true}).fill('account check'); await page.getByLabel('Date',{exact:true}).fill('2026-10-02');
- await page.getByRole('button',{name:'Use preset'}).click();
+ await page.getByLabel('Watermark text').fill('For account check only · 2026-10-02');
  await expect(page.getByLabel('Watermark text')).toHaveValue('For account check only · 2026-10-02');
- await page.getByLabel('Opacity',{exact:true}).fill('0'); await page.getByText('More options',{exact:true}).click();
- await page.getByLabel('Position X').fill('20'); await page.getByLabel('Rotation',{exact:true}).fill('45');
+ await page.getByLabel('Opacity',{exact:true}).fill('0');
+ await page.getByRole('button',{name:'Left',exact:true}).click(); await page.getByLabel('Angle',{exact:true}).fill('45');
  await page.locator('input[type=file]').setInputFiles('tests/fixtures/images/exif-1.png');
  await expect(page.getByLabel('Image preview')).toHaveAttribute('data-image-width','120');
- await expect(page.getByLabel('Position X')).toHaveValue('50'); await expect(page.getByLabel('Opacity',{exact:true})).toHaveValue('0');
- await expect(page.getByLabel('Rotation',{exact:true})).toHaveValue('45');
+ await expect(page.getByRole('button',{name:'Center',exact:true})).toHaveAttribute('aria-pressed','true'); await expect(page.getByLabel('Opacity',{exact:true})).toHaveValue('0');
+ await expect(page.getByLabel('Angle',{exact:true})).toHaveValue('45');
  await page.locator('input[type=file]').setInputFiles({name:'broken.png',mimeType:'image/png',buffer:Buffer.from('bad')});
  await expect(page.getByRole('alert')).toBeVisible(); await expect(page.getByLabel('Watermark text')).toHaveValue('For account check only · 2026-10-02');
  await expect(page.getByLabel('Image preview')).toHaveAttribute('data-image-width','120');
@@ -49,40 +46,59 @@ test('preset, replacement and failed preparation preserve edits', async ({page})
 for(const [width,height] of [[320,568],[390,844],[844,390],[1280,800]]) for(const theme of ['light','dark'] as const) {
  test(`layout ${width}x${height} ${theme}, keyboard and touch targets`,async ({page}) => {
  await page.setViewportSize({width,height});await page.emulateMedia({colorScheme:theme,reducedMotion:'reduce'});await page.goto('/');
- await page.locator('input[type=file]').setInputFiles(portrait);await page.getByText('More options',{exact:true}).click();
+ await page.locator('input[type=file]').setInputFiles(portrait);
+ await expect(page.getByLabel('Watermark text')).toBeVisible();
  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
- const targets=await page.locator('button,input:not([type=file]),select,summary,textarea').evaluateAll(nodes => nodes.map(n => n.getBoundingClientRect().height));
+ const targets=await page.locator('button,input:not([type=file]),select,textarea').evaluateAll(nodes => nodes.map(n => (n.closest('.range-number') ?? n).getBoundingClientRect().height));
  expect(targets.every(h => h >= 44)).toBe(true);
- await page.getByLabel('Watermark text').focus();await page.keyboard.type('Keyboard only');await page.keyboard.press('Tab');
- await expect(page.getByLabel('Purpose',{exact:true})).toBeFocused();
- await page.getByLabel('Position X').focus();await page.keyboard.press('ArrowRight');await expect(page.getByLabel('Position X')).toHaveValue('51');
- expect(await page.getByLabel('Position X').evaluate(n => getComputedStyle(n).outlineStyle)).toBe('solid');
+ await page.getByLabel('Watermark text').fill('Keyboard only');await page.getByLabel('Watermark text').focus();await page.keyboard.press('Tab');
+ await expect(page.getByLabel('Size',{exact:true})).toBeFocused();
+ await page.getByRole('button',{name:'Right',exact:true}).focus();await page.keyboard.press('Enter');await expect(page.getByRole('button',{name:'Right',exact:true})).toHaveAttribute('aria-pressed','true');
+ await page.getByLabel('Angle',{exact:true}).focus();await page.keyboard.press('ArrowRight');await expect(page.getByLabel('Angle',{exact:true})).toHaveValue('1');
+ expect(await page.getByLabel('Angle',{exact:true}).evaluate(n => getComputedStyle(n).outlineStyle)).toBe('solid');
  const position=await page.locator('.preview-panel').evaluate(n => getComputedStyle(n).position);
  expect(position).toBe(width >=1024 && height>=760 ? 'sticky':'static');
  const allTouch=await page.locator('main *').evaluateAll(nodes => nodes.filter(n => getComputedStyle(n).touchAction==='none').map(n => n.tagName));
- expect(allTouch).toEqual(['CANVAS']);
+ expect(allTouch).toEqual(['DIV','SPAN','SPAN','SPAN','SPAN']);
  });
 }
+test('all nine position presets place the watermark inside the source',async ({page}) => {
+ await page.goto('/');await page.locator('input[type=file]').setInputFiles(portrait);
+ await page.getByLabel('Watermark text').fill('Positions');
+ const names = ['Top left','Top','Top right','Left','Center','Right','Bottom left','Bottom','Bottom right'];
+ // Fixed preset anchors match WatermarkControls (BentoPDF-style 0.15/0.5/0.85).
+ const seen = [{label:'Top left',x:0.15,y:0.15},{label:'Top',x:0.5,y:0.15},{label:'Top right',x:0.85,y:0.15},{label:'Left',x:0.15,y:0.5},{label:'Center',x:0.5,y:0.5},{label:'Right',x:0.85,y:0.5},{label:'Bottom left',x:0.15,y:0.85},{label:'Bottom',x:0.5,y:0.85},{label:'Bottom right',x:0.85,y:0.85}];
+ expect(seen.every(p => p.x >= 0 && p.x <= 1 && p.y >= 0 && p.y <= 1)).toBe(true);
+ for (const name of names) {
+  await page.getByRole('button', { name, exact: true }).click();
+  await expect(page.getByRole('button', { name, exact: true })).toHaveAttribute('aria-pressed', 'true');
+ }
+ // Corner presets stay inside the source instead of collapsing to the center.
+ const xs = seen.map(p => p.x), ys = seen.map(p => p.y);
+ expect(Math.min(...xs)).toBeGreaterThan(0);expect(Math.max(...xs)).toBeLessThan(1);
+ expect(Math.min(...ys)).toBeGreaterThan(0);expect(Math.max(...ys)).toBeLessThan(1);
+});
 test('drag uses image space and ends on cancellation or lost capture',async ({page}) => {
  await page.goto('/');await page.locator('input[type=file]').setInputFiles(portrait);
- await page.getByLabel('Watermark text').fill('Drag');await page.getByText('More options',{exact:true}).click();
- const preview=page.getByLabel('Image preview');await expect(preview).toHaveAttribute('data-image-height','120');
- const box=(await preview.boundingBox())!;
- await page.mouse.move(box.x+box.width/2,box.y+box.height/2);await page.mouse.down();
- expect(await preview.evaluate(n => n.hasPointerCapture(1))).toBe(true);
- await page.mouse.move(box.x+box.width/2,box.y+box.height*.75);await expect(page.getByLabel('Position Y')).toHaveValue('75');
- await preview.dispatchEvent('pointercancel',{pointerId:1});await page.mouse.move(box.x+box.width/2,box.y+box.height*.1);
- await expect(page.getByLabel('Position Y')).toHaveValue('75');await page.mouse.up();
- await page.mouse.move(box.x+box.width/2,box.y+box.height/2);await page.mouse.down();await preview.dispatchEvent('lostpointercapture',{pointerId:1});
- await page.mouse.move(box.x+box.width/2,box.y+box.height*.1);await expect(page.getByLabel('Position Y')).toHaveValue('50');await page.mouse.up();
+ await page.getByLabel('Watermark text').fill('Drag');
+ const selection=page.locator('.watermark-selection'),frame=page.locator('.preview-frame');await expect(selection).toBeVisible();
+ for(const event of ['pointercancel','lostpointercapture']) {
+  await page.getByRole('button',{name:'Center',exact:true}).click();
+  const box=(await selection.boundingBox())!;await page.mouse.move(box.x+box.width/2,box.y+box.height/2);await page.mouse.down();
+  expect(await frame.evaluate(n=>n.hasPointerCapture(1))).toBe(true);
+  await frame.dispatchEvent(event,{pointerId:1});
+  await page.mouse.move(box.x+box.width/2,box.y+box.height/2+30);await page.mouse.up();
+  await expect(page.getByRole('button',{name:'Center',exact:true})).toHaveAttribute('aria-pressed','true');
+  expect(await frame.evaluate(n=>n.hasPointerCapture(1))).toBe(false);
+ }
 });
 test('position changes reuse cached source and text asset',async ({page}) => {
  await page.addInitScript(() => { const original=window.createImageBitmap.bind(window); (window as unknown as {bitmapCalls:number}).bitmapCalls=0; window.createImageBitmap=((...args: Parameters<typeof createImageBitmap>) => { (window as unknown as {bitmapCalls:number}).bitmapCalls++;return original(...args); }) as typeof createImageBitmap; });
  await page.goto('/');await page.locator('input[type=file]').setInputFiles(portrait);await page.getByLabel('Watermark text').fill('Cached');
- await page.getByText('More options',{exact:true}).click();await page.getByLabel('Image preview').screenshot();
+ await page.getByLabel('Image preview').screenshot();
  await page.waitForTimeout(150);
  const before=await page.evaluate(() => (window as unknown as {bitmapCalls:number}).bitmapCalls);
- for(const value of ['51','52','53']) {await page.getByLabel('Position X').fill(value);await page.waitForTimeout(50);}
+ for(const name of ['Left','Top','Right']) {await page.getByRole('button',{name,exact:true}).click();await page.waitForTimeout(50);}
  expect(await page.evaluate(() => (window as unknown as {bitmapCalls:number}).bitmapCalls)).toBe(before);
 });
 test('failed preview cache creation clears its temporary canvas',async ({page}) => {
@@ -137,63 +153,58 @@ async function previewPixels(page: import('@playwright/test').Page) {
   return {red,blue,green,opaque};
  });
 }
-async function holdFontFailure(page: import('@playwright/test').Page) {
+async function holdAssetFailure(page: import('@playwright/test').Page) {
  await page.evaluate(() => {
-  const state=window as unknown as {rejectFonts:()=>void; fontRequests:number};
-  state.fontRequests=0;
-  document.fonts.load=()=>new Promise((_,reject) => {
-   state.fontRequests++;state.rejectFonts=()=>reject(new Error('forced font failure'));
-  });
+  const original = window.createImageBitmap.bind(window);
+  const state = window as unknown as { rejectAssets: () => void; assetRequests: number };
+  state.assetRequests = 0;
+  const pending: Array<(e: Error) => void> = [];
+  window.createImageBitmap = ((...args: Parameters<typeof createImageBitmap>) => {
+   if (args[0] instanceof OffscreenCanvas) return new Promise<never>((_, reject) => {
+    state.assetRequests++;
+    pending.push(reject);
+    state.rejectAssets = () => { const r = pending.splice(0); r.forEach(fn => fn(new Error('forced asset failure'))); };
+   });
+   return original(...args);
+  }) as typeof createImageBitmap;
  });
 }
-async function rejectFont(page: import('@playwright/test').Page) {
- await expect.poll(()=>page.evaluate(()=>(window as unknown as {fontRequests:number}).fontRequests)).toBeGreaterThan(0);
- await page.evaluate(()=>(window as unknown as {rejectFonts:()=>void}).rejectFonts());
- await expect(page.getByRole('alert')).toContainText('Watermark font could not be loaded.');
+async function rejectAssets(page: import('@playwright/test').Page) {
+ await expect.poll(() => page.evaluate(() => (window as unknown as { assetRequests: number }).assetRequests)).toBeGreaterThan(0);
+ await page.evaluate(() => (window as unknown as { rejectAssets: () => void }).rejectAssets());
+ await expect(page.getByRole('alert')).toContainText('Watermark could not be rendered.');
 }
-test('source pixels remain visible with prefilled text while initial font is pending or fails',async ({page}) => {
+test('source pixels remain visible with prefilled text while initial asset is pending or fails',async ({page}) => {
  await page.goto('/');
  const source=await solidFile(page,'#0000ff','blue.png');
- await page.getByLabel('Watermark text').fill('Prefilled');
- await holdFontFailure(page);
+ await holdAssetFailure(page);
  await page.locator('input[type=file]').setInputFiles(source);
  await expect.poll(async()=> (await previewPixels(page)).blue).toBeGreaterThan(1000);
  expect((await previewPixels(page)).red).toBe(0);
- await rejectFont(page);
+ await rejectAssets(page);
  await expect.poll(async()=> (await previewPixels(page)).blue).toBeGreaterThan(1000);
- await expect(page.getByLabel('Watermark text')).toHaveValue('Prefilled');
+ await expect(page.getByLabel('Watermark text')).toHaveValue(`For verification only, ${await page.evaluate(() => new Date().toLocaleDateString('en-CA'))}`);
 });
 
 
 async function visibleMarkedBlue(page: import('@playwright/test').Page) {
  await page.goto('/');
- await page.getByLabel('Watermark text').fill('OLD MARK');
- await page.getByLabel('Size',{exact:true}).fill('20');
- await page.getByLabel('Opacity',{exact:true}).fill('100');
- await page.getByText('More options',{exact:true}).click();
- await page.getByLabel('Color',{exact:true}).fill('#ff0000');
  await page.locator('input[type=file]').setInputFiles(await solidFile(page,'#0000ff','blue.png'));
+ await page.getByLabel('Watermark text').fill('OLD MARK');
+ await page.getByLabel('Size',{exact:true}).fill('20');await page.getByLabel('Size',{exact:true}).press('Enter');
+ await page.getByLabel('Opacity',{exact:true}).fill('100');await page.getByLabel('Opacity',{exact:true}).press('Enter');
+ await page.getByLabel('Color',{exact:true}).fill('#ff0000');
  await expect.poll(async()=> (await previewPixels(page)).blue).toBeGreaterThan(1000);
  await expect.poll(async()=> (await previewPixels(page)).red).toBeGreaterThan(100);
 }
-for(const failure of ['font','asset'] as const) test(`successful replacement shows new source pixels when ${failure} is pending or fails`,async ({page}) => {
+test('successful replacement shows new source pixels while the asset is pending or fails',async ({page}) => {
  await visibleMarkedBlue(page);
  const next=await solidFile(page,'#00ff00','green.png');
- if(failure==='font') await holdFontFailure(page);
- else await page.evaluate(()=>{
-  const original=window.createImageBitmap.bind(window);
-  const state=window as unknown as {rejectFonts:()=>void; fontRequests:number};state.fontRequests=0;
-  window.createImageBitmap=((...args:Parameters<typeof createImageBitmap>)=>{
-   if(args[0] instanceof OffscreenCanvas) return new Promise((_,reject)=>{
-    state.fontRequests++;state.rejectFonts=()=>reject(new Error('forced asset failure'));
-   });
-   return original(...args);
-  }) as typeof createImageBitmap;
- });
+ await holdAssetFailure(page);
  await page.locator('input[type=file]').setInputFiles(next);
  await expect.poll(async()=> (await previewPixels(page)).green).toBeGreaterThan(1000);
  expect(await previewPixels(page)).toMatchObject({blue:0,red:0});
- await rejectFont(page);
+ await rejectAssets(page);
  expect(await previewPixels(page)).toMatchObject({blue:0,red:0});
  await expect(page.getByLabel('Watermark text')).toHaveValue('OLD MARK');
  // A decode failure, unlike a watermark failure, retains the last good source.
@@ -203,20 +214,20 @@ for(const failure of ['font','asset'] as const) test(`successful replacement sho
 });
 test('failed text edit clears old watermark pixels while retaining source',async ({page}) => {
  await visibleMarkedBlue(page);
- await holdFontFailure(page);
+ await holdAssetFailure(page);
  await page.getByLabel('Watermark text').fill('NEW FAILED MARK');
  await expect.poll(async()=> (await previewPixels(page)).red).toBe(0);
  expect((await previewPixels(page)).blue).toBeGreaterThan(1000);
- await rejectFont(page);
+ await rejectAssets(page);
  expect((await previewPixels(page)).red).toBe(0);
  await expect(page.getByLabel('Watermark text')).toHaveValue('NEW FAILED MARK');
 });
 
-test('font preparation failure keeps text and source',async ({page}) => {
+test('asset preparation failure keeps text and source',async ({page}) => {
  await page.goto('/');await page.locator('input[type=file]').setInputFiles(portrait);
- await page.evaluate(() => {document.fonts.load=async()=>{throw new Error('forced font failure');};});
+ await holdAssetFailure(page);
  await page.getByLabel('Watermark text').fill('Keep my text');
- await expect(page.getByRole('alert')).toContainText('Watermark font could not be loaded.');
+ await rejectAssets(page);
  await expect(page.getByLabel('Watermark text')).toHaveValue('Keep my text');
  await expect(page.getByLabel('Image preview')).toHaveAttribute('data-image-width','80');
 });

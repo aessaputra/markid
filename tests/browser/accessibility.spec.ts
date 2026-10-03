@@ -13,10 +13,10 @@ for(const theme of ['light','dark']) for(const width of [320,1280]) test(`axe WC
  const button=page.getByRole('button',{name:'Choose file'});await button.focus();
  const chooser=page.waitForEvent('filechooser');await page.keyboard.press('Enter');
  await (await chooser).setFiles('tests/fixtures/images/exif-6.png');
- await page.getByLabel('Watermark text').focus();await page.keyboard.type('Keyboard watermark');
- await page.keyboard.press('Tab');await expect(page.getByLabel('Purpose',{exact:true})).toBeFocused();
- await page.getByText('More options',{exact:true}).focus();await page.keyboard.press('Enter');
- await page.getByLabel('Position X').focus();await page.keyboard.press('ArrowRight');await expect(page.getByLabel('Position X')).toHaveValue('51');
+ await page.getByLabel('Watermark text').focus();await page.keyboard.press('ControlOrMeta+a');await page.keyboard.type('Keyboard watermark');
+ await page.keyboard.press('Tab');await expect(page.getByLabel('Size',{exact:true})).toBeFocused();
+ await page.getByRole('button',{name:'Right',exact:true}).focus();await page.keyboard.press('Enter');await expect(page.getByRole('button',{name:'Right',exact:true})).toHaveAttribute('aria-pressed','true');
+ await page.getByLabel('Angle',{exact:true}).focus();await page.keyboard.press('ArrowRight');await expect(page.getByLabel('Angle',{exact:true})).toHaveValue('1');
  await scan('image-editor');
  await page.getByRole('button',{name:'Preview',exact:true}).focus();await page.keyboard.press('Enter');
  await expect(page.getByRole('button',{name:'Download',exact:true})).toBeEnabled();await scan('image-result');

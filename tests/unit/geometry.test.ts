@@ -1,12 +1,11 @@
 import { expect, test } from 'vitest';
-import { clampImagePoint, containTransform, toImagePoint, toViewportPoint } from '../../src/lib/editor/geometry';
+import { clampImagePoint, containTransform, toImagePoint } from '../../src/lib/editor/geometry';
 
 test('letterboxed coordinates round trip', () => {
   const image = { width: 2400, height: 3200 };
   const viewport = { width: 800, height: 550 };
   const p = { x: 1200, y: 1600 };
-  expect(toViewportPoint(p, image, viewport)).toEqual({ x: 400, y: 275 });
-  const q = toImagePoint(toViewportPoint(p, image, viewport), image, viewport);
+  const q = toImagePoint({ x: 400, y: 275 }, image, viewport);
   expect(q.x).toBeCloseTo(p.x, 8);
   expect(q.y).toBeCloseTo(p.y, 8);
 });
@@ -21,7 +20,8 @@ for (const image of [{ width: 3200, height: 1800 }, { width: 1000, height: 1000 
     const viewport = { width: 317, height: 431 };
     const t = containTransform(image, viewport);
     for (const p of [{ x: 0, y: 0 }, { x: image.width, y: image.height }, { x: image.width * .231, y: image.height * .867 }]) {
-      const q = toImagePoint(toViewportPoint(p, image, viewport), image, viewport);
+      const projected = { x: p.x * t.scale + t.x, y: p.y * t.scale + t.y };
+      const q = toImagePoint(projected, image, viewport);
       expect(Math.abs(q.x - p.x) * t.scale).toBeLessThanOrEqual(1);
       expect(Math.abs(q.y - p.y) * t.scale).toBeLessThanOrEqual(1);
     }

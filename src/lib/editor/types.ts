@@ -4,7 +4,6 @@ export type Point = { x: number; y: number };
 /** x/y: normalized display coordinates with a center anchor. Angle: clockwise degrees. */
 export type Watermark = {
   text: string;
-  fontFamily: string;
   sizeRatio: number;
   x: number;
   y: number;
@@ -32,6 +31,3 @@ export type ExportResult = {
   size?: Size;
   dispose(): void;
 };
-
-/** Explicit experiment policy, not a universal browser memory guarantee. */
-export type ImagePolicy = { maxSide: number; maxPixels: number };

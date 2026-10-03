@@ -2,7 +2,11 @@
 
 **Overall release: BLOCKED.** Local implementation verification is not permission to deploy/distribute. Source base: `724a987`, branch `feat/markid`. No hosting selection, push or deployment.
 
-## Executed evidence
+## Current device-capacity policy — 2026-10-03
+
+User-approved policy supersedes the historical caps below: photos preserve original normalized dimensions; JPEG is one .92 encode without a byte cap or staged candidates; PDF preview fits actual CSS display dimensions ×2, while original PDF page content stays vector/native. Browser/device capacity can still fail, including memory exhaustion. Historical execution counts/artifacts below are not validation of this change. Physical-device, cross-engine, distribution and deployment gates remain blocked.
+
+## Executed evidence (historical)
 
 Environment: Linux x86_64; Node 24.21.0 / npm 11.19.0; Google Chrome for Testing **153.0.8010.12**, cached executable selected via environment. Playwright 1.58.2, Svelte 5.57.1, svelte-check 4.3.6, TypeScript 5.9.3, Vitest 4.1.11, Vite 7.3.6, Tailwind 4.1.18, @axe-core/playwright 4.11.1 (wrapper), axe-core 4.11.4 (engine), Poppler 24.02.0. Dependency versions and licenses: [inventory](artifacts/package-license-inventory.json).
 
@@ -23,7 +27,7 @@ Environment: Linux x86_64; Node 24.21.0 / npm 11.19.0; Google Chrome for Testing
 | Physical Android low-/mid-range | BLOCKED | no device; memory/crash/timing/drag/virtual keyboard/background-return evidence absent |
 | Physical Safari iOS | BLOCKED | no device; camera HEIC/native decode and lifecycle evidence absent |
 | Real camera 12MP/48MP and huge sources/HDR/color | BLOCKED | synthetic 12MP/48MP desktop tests PASS loading only; never mobile/camera-memory evidence |
-| Final working/JPEG/PDF quality policy | BLOCKED | physical/readability matrix needed; retain experimental 4096px/8MP, 16 candidates, 1600 normalized PDF layout; no universal minimum approved |
+| Final JPEG/PDF sizing policy | FINAL | original-resolution photo dimensions; one JPEG .92 encode without byte cap or staged candidates; PDF preview fits CSS ×2 |
 | LGPL source/build/relink/distribution | BLOCKED | inventory/notices and upstream recipe available, exact corresponding decoder sources/toolchain/build/replacement demonstration not completed; no legal compliance claim |
 | Host HTTPS/rollback | BLOCKED | user has not selected host; local HTTP only; no invented provider/config/rollback command |
 
@@ -77,4 +81,4 @@ No host-specific deployment configuration or commands exist because no host was 
 
 ## Deferred final-review findings preserved
 
-Task1 origin assertion fixed here; registered-font check already strengthened. Task2 JPEG fill-byte read amplification and skinny custom-policy maxPixels remain minor review items. Task3 temporary cache rejection cleanup was fixed earlier. Task4 live DPR reactivity remains deferred; file helper linkage is already tested. Task5 lifecycle/drag evidence strength and temporary watermark Canvas reset remain deferred. Task6 low-priority double-close remains deferred. No unrelated refactor was used to hide these. Signed PDF enabling still requires an explicit policy; exported PDFs are not sanitized, redacted or signature-preserving.
+Task1 origin assertion fixed here; registered-font check already strengthened. Task2 JPEG fill-byte read amplification and skinny custom-policy maxPixels remain minor review items. Task3 temporary cache rejection cleanup was fixed earlier. Task4 live DPR reactivity remains deferred; the earlier file-helper assertion covered only the hidden input, not the keyboard button; the scoped improvement adds a button accessible-description regression. Task5 lifecycle/drag evidence strength and temporary watermark Canvas reset remain deferred. Task6 low-priority double-close remains deferred. No unrelated refactor was used to hide these. Signed PDF enabling still requires an explicit policy; exported PDFs are not sanitized, redacted or signature-preserving.

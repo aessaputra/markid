@@ -30,20 +30,9 @@ function canvas(width: number, height: number): OffscreenCanvas | HTMLCanvasElem
   return result;
 }
 
-/** Require registered, loaded faces: fonts.check alone accepts missing families. Workers must register faces first. */
-export async function requireFont(family: string, size: number, text: string): Promise<void> {
-  const fonts = typeof document === 'undefined'
-    ? (globalThis as unknown as { fonts: FontFaceSet }).fonts : document.fonts;
-  if (!fonts || !family || /["\\\n\r]/.test(family)) throw new Error('Watermark font could not be loaded.');
-  try {
-    const faces = await fonts.load(`${size}px "${family}"`, text);
-    if (!faces.length || faces.some(face => face.status !== 'loaded' || face.family.replaceAll('"', '').replaceAll("'", '') !== family)) {
-      throw new Error('Font is not registered.');
-    }
-  } catch (cause) {
-    throw new Error('Watermark font could not be loaded.', { cause });
-  }
-}
+/** System sans stack. Main thread, image worker and PDF export share this,
+ * so preview and export resolve the same platform font. No webfont fetch. */
+export const SYSTEM_FONT = 'system-ui, sans-serif';
 
 /** Font size is relative to the shorter side. Returns unrotated, full-alpha ink with 2px padding.
  * Caller owns bitmap.close(); opacity and clockwise angle belong only to composition.
@@ -56,11 +45,10 @@ export async function renderWatermark(mark: Watermark, area: Size): Promise<Imag
     empty.getContext('2d'); // Chromium needs an initialized OffscreenCanvas backing store.
     return createImageBitmap(empty);
   }
-  await requireFont(mark.fontFamily, size, mark.text);
   const surface = canvas(1, 1);
   const ctx = surface.getContext('2d') as CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D | null;
   if (!ctx) throw new Error('Canvas renderer is unavailable.');
-  const font = `${size}px "${mark.fontFamily}"`;
+  const font = `${size}px ${SYSTEM_FONT}`;
   ctx.font = font; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
   const lines = mark.text.replaceAll('\r\n', '\n').replaceAll('\r', '\n').split('\n');
   const metrics = lines.map(line => ctx.measureText(line));

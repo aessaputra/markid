@@ -1,11 +1,11 @@
 import { composeWatermark, renderWatermark } from '../editor/watermark';
 import type { Size, Watermark } from '../editor/types';
-import { encodeBounded, EXPORT_ERROR } from './export-policy';
+import { encodeJpeg, EXPORT_ERROR } from './export-policy';
 
-/** Each candidate draws from the independent working source, never an earlier candidate. */
+/** Compose from the normalized original source and encode once. */
 export async function renderJpeg(source: ImageBitmap, area: Size, mark: Watermark, offscreen: boolean): Promise<{blob:Blob;size:Size}> {
- return encodeBounded(area, async (size,quality) => {
-  // A macrotask lets status/paint/input proceed between main-thread candidates.
+ return encodeJpeg(area, async (size,quality) => {
+  // Yield once so the main-thread processing status can paint.
   if(!offscreen) await new Promise<void>(resolve=>setTimeout(resolve,0));
   const canvas=offscreen ? new OffscreenCanvas(size.width,size.height) : document.createElement('canvas');
   canvas.width=size.width;canvas.height=size.height;

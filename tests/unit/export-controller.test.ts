@@ -1,13 +1,13 @@
 import {expect,test,vi} from 'vitest';
 import {ExportController} from '../../src/lib/editor/controller';
-import type {ExportResult,LoadedImage} from '../../src/lib/editor/types';
+import type {ExportResult,LoadedImage,LoadedSource} from '../../src/lib/editor/types';
 const image={kind:'image',size:{width:1,height:1},source:{},dispose(){},resized:false} as LoadedImage;
-const mark={text:'before',fontFamily:'Geist',sizeRatio:.05,x:.5,y:.5,angle:0,opacity:0,color:'#000'};
+const mark={text:'before',sizeRatio:.05,x:.5,y:.5,angle:0,opacity:0,color:'#000'};
 function pending(){let resolve!:(r:ExportResult)=>void;let reject!:(e:Error)=>void;return {promise:new Promise<ExportResult>((a,b)=>{resolve=a;reject=b;}),resolve:(r:ExportResult)=>resolve(r),reject:(e:Error)=>reject(e)};}
 const result=():ExportResult=>({kind:'image',blob:new Blob(['x']),dispose:vi.fn()});
 for(const outcome of ['resolve','reject'] as const) test(`invalidation retains single in-flight lock until stale ${outcome} settles`,async()=>{
  const a=pending(),b=pending(),queue=[a,b];let active=0,maxActive=0;
- const codec=vi.fn(async(_image:LoadedImage,_mark:typeof mark)=>{
+ const codec=vi.fn(async(_image:LoadedSource,_mark:typeof mark)=>{
   active++;maxActive=Math.max(maxActive,active);
   try{return await queue.shift()!.promise;}finally{active--;}
  });

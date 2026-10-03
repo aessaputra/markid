@@ -15,6 +15,7 @@ test('storage errors and invalid preference do not prevent editing', async ({pag
  await page.addInitScript(() => { Object.defineProperty(Storage.prototype,'getItem',{value:() => {throw new Error('blocked');}}); Object.defineProperty(Storage.prototype,'setItem',{value:() => {throw new Error('blocked');}}); });
  await page.goto('/'); await page.getByLabel('Theme',{exact:true}).selectOption('dark');
  await expect(page.locator('html')).toHaveAttribute('data-theme','dark');
+ await page.getByLabel('Choose file').setInputFiles('tests/fixtures/images/exif-6.png');
  await page.getByLabel('Watermark text').fill('Still editable');
  await expect(page.getByLabel('Watermark text')).toHaveValue('Still editable');
 });
@@ -26,6 +27,8 @@ test('stored theme applied before editor becomes visible', async ({page}) => {
 });
 for(const theme of ['light','dark']) test(`control boundaries and CTA contrast ${theme}`,async ({page}) => {
  await page.goto('/');await page.getByLabel('Theme',{exact:true}).selectOption(theme);
+ await page.getByLabel('Choose file').setInputFiles('tests/fixtures/images/exif-6.png');
+ await expect(page.getByLabel('Watermark text')).toBeVisible();
  const ratios=await page.evaluate(() => {
  const luminance=(color:string) => {const rgb=color.match(/\d+/g)!.slice(0,3).map(Number).map(n => {const c=n/255;return c<=.04045 ? c/12.92:((c+.055)/1.055)**2.4;});return .2126*rgb[0]+.7152*rgb[1]+.0722*rgb[2];};
  const ratio=(a:string,b:string)=> {const x=luminance(a),y=luminance(b);return (Math.max(x,y)+.05)/(Math.min(x,y)+.05);};

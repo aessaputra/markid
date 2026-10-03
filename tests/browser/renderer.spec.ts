@@ -8,7 +8,7 @@ for (const dpr of [1, 2]) for (const area of [{ width: 600, height: 400 }, { wid
     const result = await page.evaluate(async ({ area, dpr }) => {
       const path = '/src/lib/editor/watermark.ts';
       const { renderWatermark, composeWatermark } = await import(/* @vite-ignore */ path);
-      const mark = { text: 'Ágj\nFor verification only', fontFamily: 'Geist', sizeRatio: .08, x: .53, y: .41, angle: 0, opacity: .5, color: '#ff0000' };
+      const mark = { text: 'Ágj\nFor verification only', sizeRatio: .08, x: .53, y: .41, angle: 0, opacity: .5, color: '#ff0000' };
       const bitmap = await renderWatermark(mark, area);
       function bounds(canvas: HTMLCanvasElement) {
         const p = canvas.getContext('2d')!.getImageData(0,0,canvas.width,canvas.height).data;
@@ -52,7 +52,7 @@ test('source-only preview clears previous watermark and letterbox pixels', async
   const out=document.createElement('canvas');out.width=out.height=240;
   const ctx=out.getContext('2d')!;ctx.fillStyle='#ff0000';ctx.fillRect(0,0,240,240);
   try {
-   drawPreview(ctx,cache,null,{text:'pending',fontFamily:'Geist',sizeRatio:.1,x:.5,y:.5,angle:0,opacity:1,color:'#ff0000'});
+   drawPreview(ctx,cache,null,{text:'pending',sizeRatio:.1,x:.5,y:.5,angle:0,opacity:1,color:'#ff0000'});
    return {source:Array.from(ctx.getImageData(120,120,1,1).data),letterbox:Array.from(ctx.getImageData(120,10,1,1).data)};
   } finally {cache.dispose();}
  });
@@ -80,7 +80,7 @@ for (const dpr of [1, 2]) for (const { area, viewport } of [
         source.width = area.width; source.height = area.height;
         source.getContext('2d')!; // Initialize a transparent, orientation-normalized source.
         const cache = await createPreviewCache({ kind: 'image', source, size: area, resized: false, dispose() {} }, viewport, dpr);
-        const mark = { text: 'Ágj\nFor verification only', fontFamily: 'Geist', sizeRatio: .08, x: .27, y: .71, angle: 0, opacity: .5, color: '#ff0000' };
+        const mark = { text: 'Ágj\nFor verification only', sizeRatio: .08, x: .27, y: .71, angle: 0, opacity: .5, color: '#ff0000' };
         const bitmap = await renderWatermark(mark, area);
         const scale = Math.min(viewport.width / area.width, viewport.height / area.height);
         const offsetX = (viewport.width - area.width * scale) / 2;
@@ -164,7 +164,7 @@ test('preview caches the viewport source across position changes and disposes ow
     const image={ kind:'image',source,size:{width:2400,height:3200},resized:false,dispose() {} };
     const viewport={width:320,height:400};
     const cache=await createPreviewCache(image,viewport,2);
-    const mark={text:'For verification only',fontFamily:'Geist',sizeRatio:.05,x:.5,y:.5,angle:45,opacity:.5,color:'#f00'};
+    const mark={text:'For verification only',sizeRatio:.05,x:.5,y:.5,angle:45,opacity:.5,color:'#f00'};
     const bitmap=await renderWatermark(mark,image.size);
     const output=document.createElement('canvas');output.width=640;output.height=800;
     // Mutate original after cache creation: cached source must remain unchanged.
@@ -188,33 +188,48 @@ test('clockwise rotation and center are applied once with context state restored
     asset.getContext('2d')!.fillRect(15,0,5,5);const bitmap=await createImageBitmap(asset);
     const c=document.createElement('canvas');c.width=100;c.height=100;const ctx=c.getContext('2d')!;
     ctx.globalAlpha=.8;
-    composeWatermark(ctx,bitmap,{text:'',fontFamily:'Geist',sizeRatio:.1,x:.5,y:.5,angle:90,opacity:1,color:'#000'},{width:100,height:100});
+    composeWatermark(ctx,bitmap,{text:'',sizeRatio:.1,x:.5,y:.5,angle:90,opacity:1,color:'#000'},{width:100,height:100});
     const alpha=(x:number,y:number)=>ctx.getImageData(x,y,1,1).data[3];
     const result={clockwise:alpha(52,57),wrong:alpha(47,42),alpha:ctx.globalAlpha,transform:ctx.getTransform().isIdentity};bitmap.close();return result;
   });
   expect(result.clockwise).toBe(255);expect(result.wrong).toBe(0);expect(result.alpha).toBe(.8);expect(result.transform).toBe(true);
 });
 
-test('unknown and failed registered fonts fail explicitly instead of silently falling back', async ({ page }) => {
+test('system font stack is shared between preview and export code', async ({ page }) => {
   await page.goto('/');
-  const errors = await page.evaluate(async () => {
-    const path='/src/lib/editor/watermark.ts';const { requireFont }=await import(/* @vite-ignore */ path);
-    const failed=new FontFace('BrokenLocal', 'url(/missing-local-font.woff2)');document.fonts.add(failed);
-    const errors=[];
-    for(const family of ['NoRegisteredFont','BrokenLocal']) {
-      try { await requireFont(family,32,'For verification only');errors.push('no error'); } catch(e) { errors.push((e as Error).message); }
-    }
-    return errors;
+  const stack = await page.evaluate(async () => {
+    const path = '/src/lib/editor/watermark.ts';
+    const { SYSTEM_FONT } = await import(/* @vite-ignore */ path);
+    return SYSTEM_FONT;
   });
-  expect(errors).toEqual(['Watermark font could not be loaded.','Watermark font could not be loaded.']);
+  expect(stack).toBe('system-ui, sans-serif');
 });
 
-test('renderer produces bounded multiline glyphs using loaded local Geist', async ({ page }) => {
+test('system font resolves identically on main thread and in a worker canvas', async ({ page }) => {
+  await page.goto('/');
+  const result = await page.evaluate(async () => {
+    const stack = '32px system-ui, sans-serif';
+    const c = document.createElement('canvas');
+    const ctx = c.getContext('2d')!;
+    ctx.font = stack;
+    const main = { font: ctx.font, width: ctx.measureText('For verification only').width };
+    const worker = await new Promise((resolve, reject) => {
+      const w = new Worker(URL.createObjectURL(new Blob([`const c=new OffscreenCanvas(64,64);const x=c.getContext('2d');x.font=${JSON.stringify(stack)};const m=x.measureText('For verification only');postMessage({font:x.font,width:m.width});`], { type: 'text/javascript' })));
+      w.onmessage = ({ data }: MessageEvent) => { w.terminate(); resolve(data); };
+      w.onerror = (e) => { w.terminate(); reject(new Error(e.message)); };
+    });
+    return { main, worker };
+  });
+  expect(result.main.width).toBeGreaterThan(0);
+  expect(result.worker).toEqual(result.main);
+});
+
+test('renderer produces bounded multiline glyphs with the shared system font', async ({ page }) => {
   await page.goto('/');
   const result = await page.evaluate(async () => {
     const path = '/src/lib/editor/watermark.ts';
     const { renderWatermark } = await import(/* @vite-ignore */ path);
-    const mark = { text: 'Ágj\nFor verification only', fontFamily: 'Geist', sizeRatio: .08, x: .5, y: .5, angle: 45, opacity: 0, color: '#ff0000' };
+    const mark = { text: 'Ágj\nFor verification only', sizeRatio: .08, x: .5, y: .5, angle: 45, opacity: 0, color: '#ff0000' };
     const bitmap = await renderWatermark(mark, { width: 600, height: 400 });
     const canvas = document.createElement('canvas');
     canvas.width = bitmap.width; canvas.height = bitmap.height;
@@ -226,11 +241,9 @@ test('renderer produces bounded multiline glyphs using loaded local Geist', asyn
       const alpha = pixels[(y * canvas.width + x) * 4 + 3];
       if (alpha) { minX = Math.min(minX,x); maxX = Math.max(maxX,x); minY = Math.min(minY,y); maxY = Math.max(maxY,y); maxAlpha = Math.max(maxAlpha,alpha); }
     }
-    const faces = await document.fonts.load('32px Geist', mark.text);
     bitmap.close();
-    return { width: canvas.width, height: canvas.height, minX, minY, maxX, maxY, maxAlpha, loaded: faces.length > 0 && faces.every(face => face.status === 'loaded' && face.family.replaceAll('"','') === 'Geist') };
+    return { width: canvas.width, height: canvas.height, minX, minY, maxX, maxY, maxAlpha };
   });
-  expect(result.loaded).toBe(true);
   expect(result.width).toBeGreaterThan(result.height);
   expect(result.height).toBeGreaterThan(32);
   expect(result.minX).toBeGreaterThanOrEqual(1);
@@ -240,12 +253,12 @@ test('renderer produces bounded multiline glyphs using loaded local Geist', asyn
   expect(result.maxAlpha).toBe(255); // opacity/rotation are composition-only
 });
 
-test('reviewable deterministic local-font fixture uses Canvas fallback', async ({ page }) => {
+test('reviewable deterministic system-font fixture uses Canvas fallback', async ({ page }) => {
   await page.goto('/');
   const result = await page.evaluate(async () => {
     Object.defineProperty(window, 'OffscreenCanvas', { value: undefined, configurable: true });
     const path='/src/lib/editor/watermark.ts';const {renderWatermark,composeWatermark}=await import(/* @vite-ignore */ path);
-    const mark={text:'Ágj\nFor verification only',fontFamily:'Geist',sizeRatio:.09,x:.5,y:.5,angle:45,opacity:.5,color:'#059669'};
+    const mark={text:'Ágj\nFor verification only',sizeRatio:.09,x:.5,y:.5,angle:45,opacity:.5,color:'#059669'};
     const bitmap=await renderWatermark(mark,{width:600,height:400});
     const c=document.createElement('canvas');c.width=600;c.height=400;
     c.setAttribute('data-fixture','renderer');
@@ -254,5 +267,5 @@ test('reviewable deterministic local-font fixture uses Canvas fallback', async (
     const width=bitmap.width,height=bitmap.height;bitmap.close();return {width,height};
   });
   expect(result.width).toBeGreaterThan(100);expect(result.height).toBeGreaterThan(40);
-  await page.locator('[data-fixture="renderer"]').screenshot({ path: 'test-results/renderer-local-geist.png' });
+  await page.locator('[data-fixture="renderer"]').screenshot({ path: 'test-results/renderer-system-font.png' });
 });

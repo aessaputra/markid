@@ -17,8 +17,3 @@ export function toImagePoint(point: Point, image: Size, viewport: Size): Point {
   const t = containTransform(image, viewport);
   return { x: (point.x - t.x) / t.scale, y: (point.y - t.y) / t.scale };
 }
-
-export function toViewportPoint(point: Point, image: Size, viewport: Size): Point {
-  const t = containTransform(image, viewport);
-  return { x: point.x * t.scale + t.x, y: point.y * t.scale + t.y };
-}

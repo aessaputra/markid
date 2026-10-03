@@ -1,15 +1,13 @@
-import {expect,test} from 'vitest';
-import {assertJpeg, candidates, encodeBounded} from '../../src/lib/image/export-policy';
-test('experimental schedule is bounded to 16 proportional candidates',()=>{
- const schedule=candidates({width:2400,height:3200});
- expect(schedule).toHaveLength(16);
- expect(schedule[0]).toEqual({size:{width:2400,height:3200},quality:.92});
- expect(schedule[15]).toEqual({size:{width:1320,height:1760},quality:.70});
+import {expect,test,vi} from 'vitest';
+import {assertJpeg,encodeJpeg} from '../../src/lib/image/export-policy';
+test('single JPEG encode preserves original dimensions at .92 even above 1MiB',async()=>{
+ const blob=new Blob([new Uint8Array(1048577)],{type:'image/jpeg'}),encode=vi.fn(async()=>blob);
+ const size={width:8000,height:6000};expect(await encodeJpeg(size,encode)).toEqual({blob,size});
+ expect(encode).toHaveBeenCalledExactlyOnceWith(size,.92);
 });
-test('null, empty and wrong MIME are errors; oversize is never a success',async()=>{
- for(const b of [null,new Blob([],{type:'image/jpeg'}),new Blob(['x'],{type:'image/png'}),new Blob([new Uint8Array(1048577)],{type:'image/jpeg'})]) expect(()=>assertJpeg(b)).toThrow('Export failed. Try again.');
- assertJpeg(new Blob([new Uint8Array(1048576)],{type:'image/jpeg'}));
- let attempts=0;
- await expect(encodeBounded({width:10,height:10},async()=>{attempts++;return new Blob([new Uint8Array(1048577)],{type:'image/jpeg'});})).rejects.toThrow('Export failed. Try again.');
- expect(attempts).toBe(16);
+test('null, empty and wrong MIME remain errors without retries',async()=>{
+ for(const blob of [null,new Blob([],{type:'image/jpeg'}),new Blob(['x'],{type:'image/png'})]) {
+ expect(()=>assertJpeg(blob)).toThrow('Export failed. Try again.');const encode=vi.fn(async()=>blob);
+ await expect(encodeJpeg({width:10,height:10},encode)).rejects.toThrow('Export failed. Try again.');expect(encode).toHaveBeenCalledTimes(1);
+ }
 });

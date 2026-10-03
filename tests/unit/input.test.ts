@@ -1,5 +1,5 @@
 import { expect, test, vi } from 'vitest';
-import { fitWorkingSize } from '../../src/lib/image/load';
+import { validateSize } from '../../src/lib/input/headers';
 import { checkFileSize } from '../../src/lib/input/policy';
 import { identify } from '../../src/lib/input/identify';
 import { readFileSync } from 'node:fs';
@@ -14,16 +14,9 @@ test('signature beats MIME and JPEG frames have dimensions', async () => {
   await expect(identify(new Blob([new Uint8Array([0,0,0,24,102,116,121,112,109,105,102,49])]))).rejects.toThrow();
 });
 
-test('working target accepts normal large sources and rejects unsafe arithmetic', () => {
-  for (const size of [{width:4000,height:3000},{width:8000,height:6000},{width:65535,height:65535}]) {
-    const out = fitWorkingSize(size,{maxSide:4096,maxPixels:8_000_000});
-    expect(out.width).toBeLessThanOrEqual(4096);
-    expect(out.width*out.height).toBeLessThanOrEqual(8_000_000);
-    expect(out.height).toBe(Math.floor(size.height*Math.min(1,4096/size.width,4096/size.height,Math.sqrt(8_000_000/(size.width*size.height)))));
-  }
-  expect(fitWorkingSize({width:1,height:65535},{maxSide:4096,maxPixels:8_000_000})).toEqual({width:1,height:4096});
-  for (const size of [{width:0,height:1},{width:Infinity,height:1},{width:2**32,height:2**32}]) expect(() => fitWorkingSize(size,{maxSide:4096,maxPixels:8_000_000})).toThrow();
-  for (const policy of [{maxSide:0,maxPixels:1},{maxSide:1,maxPixels:NaN},{maxSide:1.5,maxPixels:1}]) expect(() => fitWorkingSize({width:1,height:1},policy)).toThrow();
+test('original normalized dimensions are preserved and unsafe arithmetic rejected', () => {
+ for(const size of [{width:4000,height:3000},{width:8000,height:6000},{width:1,height:65535}]) expect(validateSize(size)).toEqual(size);
+ for(const size of [{width:0,height:1},{width:Infinity,height:1},{width:2**32,height:2**32}]) expect(()=>validateSize(size)).toThrow();
 });
 test('PNG IHDR validates coding fields before decode', async () => {
   const valid = new Uint8Array(readFileSync('tests/fixtures/images/alpha.png'));
@@ -114,8 +107,7 @@ test('PNG chunk scanning skips IDAT and unrelated metadata; TIFF reads stay boun
   for(const [start,end] of slices.mock.calls) expect(Number(end)-Number(start)).toBeLessThanOrEqual(65535);
   expect(slices.mock.calls.reduce((sum,[start,end])=>sum+Number(end)-Number(start),0)).toBeLessThan(73_000);
 });
-test('decimal 10 MB boundary', () => {
-  expect(() => checkFileSize(10_000_000)).not.toThrow();
-  expect(() => checkFileSize(10_000_001)).toThrow('File exceeds 10 MB.');
+test('input size has no fixed byte cap but rejects empty or invalid sizes', () => {
+  for (const n of [1,10_000_000,10_000_001,100_000_000]) expect(() => checkFileSize(n)).not.toThrow();
   for (const n of [0, -1, NaN, Infinity, 1.5]) expect(() => checkFileSize(n)).toThrow();
 });

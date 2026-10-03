@@ -1,7 +1,4 @@
 import { mount } from 'svelte';
-import '@fontsource/geist/latin-400.css';
-import '@fontsource/geist/latin-500.css';
-import '@fontsource/geist/latin-600.css';
 import './app.css';
 import App from './App.svelte';
 import { applyTheme, readTheme } from './lib/ui/theme';

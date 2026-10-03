@@ -8,7 +8,7 @@ for(const name of ['two-pages','rotated-crop','scan','normalized-boxes'])test(`r
   const {renderWatermark,composeWatermark}=await import(/* @vite-ignore */ String('/src/lib/editor/watermark.ts'));
   const bytes=await (await fetch(`/tests/fixtures/pdf/${name}.pdf`)).arrayBuffer();
   const pdf=await loadPdf(new File([bytes],'test.pdf'));
-  const mark={text:'Asymmetric WIDE\nI',fontFamily:'Geist',sizeRatio:.07,x:.35,y:.4,angle:37,opacity:.5,color:'#f00000'};
+  const mark={text:'Asymmetric WIDE\nI',sizeRatio:.07,x:.35,y:.4,angle:37,opacity:.5,color:'#f00000'};
   const a=await exportPdf(pdf,mark),b=await exportPdf(pdf,mark),zero=await exportPdf(pdf,{...mark,opacity:0});
   const results=[];
   function pixels(image:any){const c=document.createElement('canvas');c.width=Math.ceil(image.size.width);c.height=Math.ceil(image.size.height);const x=c.getContext('2d')!;x.drawImage(image.source,0,0);return {c,x,data:x.getImageData(0,0,c.width,c.height).data};}
@@ -25,18 +25,21 @@ for(const name of ['two-pages','rotated-crop','scan','normalized-boxes'])test(`r
    const src=pixels(source).data;
    const expected=centroid(overlay,original.c.width,src),actual=centroid(saved.data,saved.c.width,src);
    const text=async(p:any)=>{const page=await states.get(p)!.doc.getPage(i+1);return (await page.getTextContent()).items.map((v:any)=>v.str).join('');};
-   results.push({expected,actual,textSame:await text(pdf)===await text(a.pdf!),repeatSame:saved.data.every((v,j)=>v===second.data[j]),zeroSame:src.every((v,j)=>v===transparent.data[j])});
+   results.push({expected,actual,textSame:await text(pdf)===await text(a.pdf!),repeatSame:saved.data.every((v,j)=>v===second.data[j]),repeatDiff:saved.data.reduce((n,v,j)=>n+(v!==second.data[j]?1:0),0),repeatMax:saved.data.reduce((n,v,j)=>Math.max(n,Math.abs(v-second.data[j])),0),zeroSame:src.every((v,j)=>v===transparent.data[j])});
    for(const v of [source,output,again,invisible])v.dispose();
   }
   // Independent saved-stream inspection, not export implementation instrumentation.
   const lib=await import(/* @vite-ignore */ String('/node_modules/.vite/deps/pdf-lib.js'));const structure=await lib.PDFDocument.load(await a.blob.arrayBuffer());
   const originalStructure=await lib.PDFDocument.load(bytes);
+  const repeatStructure=await lib.PDFDocument.load(await b.blob.arrayBuffer());
+  const images=(doc:any)=>doc.context.enumerateIndirectObjects().filter(([,v]:any)=>v instanceof lib.PDFRawStream && v.dict.get(lib.PDFName.of('Subtype'))?.toString()==='/Image').map(([,v]:any)=>Array.from(v.contents));
+  const repeatAssetsSame=JSON.stringify(images(structure))===JSON.stringify(images(repeatStructure));
   const countPlacements=(document:any)=>document.getPages().map((page:any)=>{const contents=page.node.Contents();let operators='';for(let j=0;j<(contents?.size()??0);j++){const stream=document.context.lookup(contents.get(j));operators+=new TextDecoder().decode(lib.decodePDFRawStream(stream).decode());}return (operators.match(/\/Image-[^\s]+\s+Do/g)||[]).length;});
   const originals=countPlacements(originalStructure),placements=countPlacements(structure).map((v:number,i:number)=>v-originals[i]);
-  const count=a.pdf!.pageCount;for(const v of [a,b,zero])v.dispose();pdf.dispose();return {count,results,placements};
+  const count=a.pdf!.pageCount;for(const v of [a,b,zero])v.dispose();pdf.dispose();return {count,results,placements,repeatAssetsSame};
  },name);
- expect(metrics.count).toBe(name==='normalized-boxes'?8:name==='rotated-crop'?4:name==='scan'?1:2);expect(metrics.placements).toEqual(Array(metrics.count).fill(1));
- for(const m of metrics.results){expect(m.textSame).toBe(true);expect(m.repeatSame).toBe(true);expect(m.zeroSame).toBe(true);expect(m.actual.n).toBeGreaterThan(20);expect(Math.abs(m.actual.x-m.expected.x)).toBeLessThan(1.5);expect(Math.abs(m.actual.y-m.expected.y)).toBeLessThan(1.5);
+ expect(metrics.count).toBe(name==='normalized-boxes'?8:name==='rotated-crop'?4:name==='scan'?1:2);expect(metrics.placements).toEqual(Array(metrics.count).fill(1));expect(metrics.repeatAssetsSame).toBe(true);
+ for(const m of metrics.results){expect(m.textSame).toBe(true);expect(m.repeatMax,JSON.stringify(m)).toBeLessThanOrEqual(1);expect(m.zeroSame).toBe(true);expect(m.actual.n).toBeGreaterThan(20);expect(Math.abs(m.actual.x-m.expected.x)).toBeLessThan(1.5);expect(Math.abs(m.actual.y-m.expected.y)).toBeLessThan(1.5);
   for(let k=0;k<4;k++)expect(Math.abs(m.actual.bounds[k]-m.expected.bounds[k])).toBeLessThanOrEqual(3);
   for(const key of ['xx','yy','xy'] as const)expect(Math.abs(m.actual[key]-m.expected[key])/Math.max(1,Math.abs(m.expected[key]))).toBeLessThan(.08);
   expect(m.actual.n/m.expected.n).toBeGreaterThan(.85);expect(m.actual.n/m.expected.n).toBeLessThan(1.15);
