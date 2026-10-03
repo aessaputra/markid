@@ -9,7 +9,9 @@
  import WatermarkControls from './lib/ui/WatermarkControls.svelte';
  import StatusMessage from './lib/ui/StatusMessage.svelte';
  function todayText() { return new Date().toLocaleDateString('en-CA'); }
-function defaultMark(): Watermark { return {text:`For verification only, ${todayText()}`,sizeRatio:.05,x:.5,y:.5,angle:0,opacity:.35,color:'#18181b'}; }
+function defaultMark(): Watermark {
+  return { text: `For verification only, ${todayText()}`, sizeRatio: .05, x: .5, y: .5, angle: 0, opacity: .35, color: '#18181b', mode: 'single' };
+}
 let mark = $state<Watermark>(defaultMark());
 let watermarkArea = $state<{ image: Size; watermark: Size | null } | null>(null);
  let current = $state.raw<LoadedSource | null>(null);

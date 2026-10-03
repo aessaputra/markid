@@ -10,6 +10,7 @@ export type Watermark = {
   angle: number;
   opacity: number;
   color: string;
+  mode: 'single' | 'tiled';
 };
 
 /** Decoded sources are orientation-normalized; renderers must not reapply EXIF. */
