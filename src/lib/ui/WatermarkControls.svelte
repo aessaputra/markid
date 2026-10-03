@@ -9,7 +9,7 @@ const selected = $derived(positions.find(p => Math.abs(mark.x-p.x)<1e-6 && Math.
  function update(patch: Partial<Watermark>) { onchange({ ...mark, ...patch }); }
 </script>
 <section aria-label="Watermark settings" class="panel grid gap-5">
- <Field id="text" label="Watermark text"><textarea id="text" rows="3" placeholder="For verification only, 2026-10-02…" value={mark.text} oninput={e => update({text:e.currentTarget.value})}></textarea></Field>
+ <Field id="text" label="Watermark text"><textarea id="text" rows="3" value={mark.text} oninput={e => update({text:e.currentTarget.value})}></textarea></Field>
  <div class="grid min-w-0 grid-cols-1 gap-4 min-[420px]:grid-cols-2">
  <RangeField id="size" label="Size" value={mark.sizeRatio*100} min={1} max={20} onchange={value => update({sizeRatio:value/100})} />
  <Field id="color" label="Color"><input id="color" type="color" value={mark.color} oninput={e => update({color:e.currentTarget.value})} /></Field>

@@ -49,6 +49,12 @@ for(const [width,height] of [[320,568],[390,844],[844,390],[1280,800]]) for(cons
  await page.locator('input[type=file]').setInputFiles(portrait);
  await expect(page.getByLabel('Watermark text')).toBeVisible();
  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+ if(width>=1024) {
+  const panel=await page.locator('.preview-panel').boundingBox(),controls=await page.locator('.editor-layout > fieldset').boundingBox();
+  expect(Math.abs(panel!.height-controls!.height)).toBeLessThanOrEqual(48);
+  const frame=await page.locator('.preview-frame').boundingBox();
+  expect(frame!.height).toBeGreaterThanOrEqual(Math.min(500,panel!.height-120));
+ }
  const targets=await page.locator('button,input:not([type=file]),select,textarea').evaluateAll(nodes => nodes.map(n => (n.closest('.range-number') ?? n).getBoundingClientRect().height));
  expect(targets.every(h => h >= 44)).toBe(true);
  await page.getByLabel('Watermark text').fill('Keyboard only');await page.getByLabel('Watermark text').focus();await page.keyboard.press('Tab');
