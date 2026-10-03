@@ -31,8 +31,8 @@ test('rotated extents cull and retain all intersecting tiles', () => {
   expect(centers.some(p=>p.y<0 || p.y>80)).toBe(true);
 });
 
-test('dense pattern remains bounded and symmetric across whole page', () => {
-  const centers=tiledCenters(area,{width:.01,height:.01},45);
+for (const gap of [undefined, 0]) test(`dense pattern remains bounded and symmetric across whole page with gap ${gap}`, () => {
+  const centers=tiledCenters(area,{width:.01,height:.01},45,gap,gap);
   expect(centers.length).toBeLessThanOrEqual(4096);
   expect(centers.length).toBeGreaterThan(100);
   for(const p of centers) expect(centers.some(q=>Math.abs(q.x-(1200-p.x))<1e-7 && Math.abs(q.y-(800-p.y))<1e-7)).toBe(true);
@@ -43,6 +43,33 @@ test('dense pattern remains bounded and symmetric across whole page', () => {
 for(const value of [0,-1,NaN,Infinity,-Infinity]) for(const field of ['width','height'] as const) test(`rejects ${field}=${value}`,()=>{
   expect(()=>tiledCenters({...area,[field]:value},tile,0)).toThrow(RangeError);
   expect(()=>tiledCenters(area,{...tile,[field]:value},0)).toThrow(RangeError);
+});
+
+for (const [gapX, gapY] of [[0, 0], [25, 75], [60, 15], [200, 200]]) {
+  test(`custom percent spacing ${gapX}/${gapY}`, () => {
+    const a = { width: 1200, height: 800 }, t = { width: 100, height: 20 };
+    const centers = tiledCenters(a, t, 45, gapX, gapY);
+    const c = Math.SQRT1_2, s = c, sx = 100 * (1 + gapX / 100), sy = 20 * (1 + gapY / 100);
+    expect(centers).toContainEqual({ x: 600, y: 400 });
+    for (const p of centers) {
+      const x = (p.x - 600) * c + (p.y - 400) * s;
+      const y = -(p.x - 600) * s + (p.y - 400) * c;
+      expect(x / sx).toBeCloseTo(Math.round(x / sx), 8);
+      expect(y / sy).toBeCloseTo(Math.round(y / sy), 8);
+    }
+    expect(centers.some(p => Math.abs(p.x - (600 + sx * c)) < 1e-8 && Math.abs(p.y - (400 + sx * s)) < 1e-8)).toBe(true);
+  });
+}
+
+test('omitted gaps preserve 25/75 layout', () => {
+  expect(tiledCenters(area, tile, 45)).toEqual(tiledCenters(area, tile, 45, 25, 75));
+  expect(tiledCenters(area, tile, 45, undefined, 123)).toEqual(tiledCenters(area, tile, 45, 25, 123));
+  expect(tiledCenters(area, tile, 45, 37, undefined)).toEqual(tiledCenters(area, tile, 45, 37, 75));
+});
+
+for (const value of [-1, 201, NaN, Infinity, -Infinity]) test(`reject invalid gap ${value}`, () => {
+  expect(() => tiledCenters(area, tile, 0, value, 75)).toThrow(RangeError);
+  expect(() => tiledCenters(area, tile, 0, 25, value)).toThrow(RangeError);
 });
 
 test('tile draw failure balances each Canvas save',()=>{

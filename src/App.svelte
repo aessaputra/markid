@@ -8,9 +8,8 @@
  import EditorPreview from './lib/ui/EditorPreview.svelte';
  import WatermarkControls from './lib/ui/WatermarkControls.svelte';
  import StatusMessage from './lib/ui/StatusMessage.svelte';
- function todayText() { return new Date().toLocaleDateString('en-CA'); }
 function defaultMark(): Watermark {
-  return { text: `For verification only, ${todayText()}`, sizeRatio: .05, x: .5, y: .5, angle: 0, opacity: .35, color: '#18181b', mode: 'single' };
+  return { text: `For verification only, ${new Date().toLocaleDateString('en-CA')}`, sizeRatio: .05, x: .5, y: .5, angle: 0, opacity: .35, color: '#18181b', mode: 'single', gapX: 25, gapY: 75 };
 }
 let mark = $state<Watermark>(defaultMark());
 let watermarkArea = $state<{ image: Size; watermark: Size | null } | null>(null);

@@ -23,8 +23,7 @@ export async function decodeNativeHtml(blob:Blob, displaySize?:Size):Promise<Loa
   let canvas: HTMLCanvasElement | undefined;
   try {
     await new Promise<void>((resolve,reject)=>{image.onload=()=>resolve();image.onerror=()=>reject(failure());image.src=url;});
-    validateSize({width:image.naturalWidth,height:image.naturalHeight});
-    const actual={width:image.naturalWidth,height:image.naturalHeight};
+    const actual=validateSize({width:image.naturalWidth,height:image.naturalHeight});
     if (displaySize && (actual.width !== displaySize.width || actual.height !== displaySize.height)) throw failure();
     canvas = document.createElement('canvas'); canvas.width=actual.width; canvas.height=actual.height;
     const context = canvas.getContext('2d'); if (!context) throw failure();

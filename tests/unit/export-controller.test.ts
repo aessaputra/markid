@@ -12,10 +12,10 @@ for(const outcome of ['resolve','reject'] as const) test(`invalidation retains s
   try{return await queue.shift()!.promise;}finally{active--;}
  });
  const changed=vi.fn();const c=new ExportController(codec,changed);
- const snapshot={...mark};const first=c.prepare(image,snapshot);snapshot.text='after';
+ const snapshot={...mark,gapX:37,gapY:123};const first=c.prepare(image,snapshot);snapshot.text='after';snapshot.gapX=200;snapshot.gapY=0;
  c.invalidate();await c.prepare(image,snapshot);
  expect(codec).toHaveBeenCalledTimes(1);expect(c.processing).toBe(true);
- expect(codec.mock.calls[0][1].text).toBe('before');
+ expect(codec.mock.calls[0][1]).toMatchObject({text:'before',gapX:37,gapY:123});
  const stale=result();if(outcome==='resolve')a.resolve(stale);else a.reject(new Error('old'));
  const notifications=changed.mock.calls.length;await first;
  expect(c.processing).toBe(false);expect(changed.mock.calls.length).toBeGreaterThan(notifications);

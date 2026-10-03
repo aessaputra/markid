@@ -1,8 +1,11 @@
 import type { Point, Size, Watermark } from './types';
 
-export function tiledCenters(area: Size, tile: Size, angleDeg: number): Point[] {
+export function tiledCenters(area: Size, tile: Size, angleDeg: number, gapX = 25, gapY = 75): Point[] {
   for (const v of [area.width, area.height, tile.width, tile.height]) {
     if (!Number.isFinite(v) || v <= 0) throw new RangeError('Tiled layout dimensions must be positive and finite.');
+  }
+  for (const gap of [gapX, gapY]) {
+    if (!Number.isFinite(gap) || gap < 0 || gap > 200) throw new RangeError('Tile gaps must be between 0 and 200 percent.');
   }
   const theta = ((Number.isFinite(angleDeg) ? angleDeg : 0) % 360) * Math.PI / 180;
   const cos = Math.cos(theta), sin = Math.sin(theta);
@@ -12,7 +15,7 @@ export function tiledCenters(area: Size, tile: Size, angleDeg: number): Point[] 
   // Inverse-rotate the page corners expanded by the rotated tile bounds.
   const reachX = Math.abs(cos) * (cx + hx) + Math.abs(sin) * (cy + hy);
   const reachY = Math.abs(sin) * (cx + hx) + Math.abs(cos) * (cy + hy);
-  let stepX = tile.width * 1.25, stepY = tile.height * 1.75;
+  let stepX = tile.width * (1 + gapX / 100), stepY = tile.height * (1 + gapY / 100);
   // ponytail: bound candidate work to 4096; increase both gaps, never truncate rows.
   while ((2 * Math.floor(reachX / stepX) + 1) * (2 * Math.floor(reachY / stepY) + 1) > 4096) {
     const count = (2 * Math.floor(reachX / stepX) + 1) * (2 * Math.floor(reachY / stepY) + 1);
@@ -38,7 +41,7 @@ export function composeTiledWatermark(
 ): void {
   const scale = Math.min(area.width, area.height) / 1600;
   const width = bitmap.width * scale, height = bitmap.height * scale;
-  const centers = tiledCenters(area, { width, height }, mark.angle);
+  const centers = tiledCenters(area, { width, height }, mark.angle, mark.gapX, mark.gapY);
   const theta = (mark.angle * Math.PI) / 180;
   ctx.save();
   try {

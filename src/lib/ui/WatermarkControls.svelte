@@ -30,7 +30,12 @@
  <RangeField id="opacity" label="Opacity" value={mark.opacity*100} min={0} max={100} onchange={value => update({opacity:value/100})} />
  <RangeField id="rotation" label="Angle" value={mark.angle} min={-180} max={180} onchange={value => update({angle:value})} />
  </div>
-{#if mark.mode !== 'tiled'}
+{#if mark.mode === 'tiled'}
+ <div class="grid min-w-0 grid-cols-1 gap-4 min-[420px]:grid-cols-2">
+ <RangeField id="gap-x" label="Horizontal gap" value={mark.gapX ?? 25} min={0} max={200} sliderStep={5} onchange={gapX => update({gapX})} />
+ <RangeField id="gap-y" label="Vertical gap" value={mark.gapY ?? 75} min={0} max={200} sliderStep={5} onchange={gapY => update({gapY})} />
+ </div>
+{:else}
 <fieldset class="grid gap-2"><legend>Position</legend>
  <div class="position-grid">
   {#each placed as position (position.label)}

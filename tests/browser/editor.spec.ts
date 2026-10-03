@@ -160,14 +160,13 @@ async function previewPixels(page: import('@playwright/test').Page) {
  return page.getByLabel('Image preview').evaluate((node: HTMLCanvasElement) => {
   const ctx=node.getContext('2d')!;
   const pixels=ctx.getImageData(0,0,node.width,node.height).data;
-  let red=0,blue=0,green=0,opaque=0;
+  let red=0,blue=0,green=0;
   for(let i=0;i<pixels.length;i+=4) {
-   if(pixels[i+3]===255) opaque++;
    if(pixels[i]>pixels[i+1]+30 && pixels[i]>pixels[i+2]+30) red++;
    if(pixels[i+2]===255 && pixels[i]===0 && pixels[i+1]===0 && pixels[i+3]===255) blue++;
    if(pixels[i+1]===255 && pixels[i]===0 && pixels[i+2]===0 && pixels[i+3]===255) green++;
   }
-  return {red,blue,green,opaque};
+  return {red,blue,green};
  });
 }
 async function holdAssetFailure(page: import('@playwright/test').Page) {
