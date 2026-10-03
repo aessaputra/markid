@@ -1,4 +1,31 @@
-import type { Size, Watermark } from './types';
+import type { Point, Size, Watermark } from './types';
+
+export function tiledCenters(area: Size, tile: Size, angleDeg: number): Point[] {
+  for (const v of [area.width, area.height, tile.width, tile.height]) {
+    if (!Number.isFinite(v) || v <= 0) throw new RangeError('Tiled layout dimensions must be positive and finite.');
+  }
+  const angle = Number.isFinite(angleDeg) ? angleDeg : 0;
+  const stepX = tile.width * 2;
+  const stepY = tile.height * 2;
+  const cx = area.width / 2, cy = area.height / 2;
+  const radius = Math.hypot(area.width, area.height) / 2;
+  const theta = (angle % 360) * Math.PI / 180;
+  const cos = Math.cos(-theta), sin = Math.sin(-theta);
+  const points: Point[] = [];
+  let row = 0;
+  for (let y = -radius; y <= radius; y += stepY, row++) {
+    const offset = row % 2 === 1 ? stepX / 2 : 0;
+    for (let x = -radius + offset; x <= radius; x += stepX) {
+      const dx = x, dy = y;
+      const px = cx + dx * cos - dy * sin;
+      const py = cy + dx * sin + dy * cos;
+      if (px < -tile.width || px > area.width + tile.width || py < -tile.height || py > area.height + tile.height) continue;
+      points.push({ x: px, y: py });
+      if (points.length >= 500) return points;
+    }
+  }
+  return points;
+}
 
 /** Compose in image-space units. Caller supplies preview scale/offset/DPR transform.
  * Reuse the same bitmap/layout for preview and export; neither function mutates it.
