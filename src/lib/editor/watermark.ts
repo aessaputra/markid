@@ -27,6 +27,25 @@ export function tiledCenters(area: Size, tile: Size, angleDeg: number): Point[] 
   return points;
 }
 
+export function composeTiledWatermark(
+  ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D,
+  bitmap: ImageBitmap, mark: Watermark, area: Size,
+): void {
+  const centers = tiledCenters(area, { width: bitmap.width, height: bitmap.height }, mark.angle);
+  const theta = (mark.angle * Math.PI) / 180;
+  ctx.save();
+  try {
+    ctx.globalAlpha = mark.opacity;
+    for (const c of centers) {
+      ctx.save();
+      ctx.translate(c.x, c.y);
+      ctx.rotate(theta);
+      ctx.drawImage(bitmap, -bitmap.width / 2, -bitmap.height / 2);
+      ctx.restore();
+    }
+  } finally { ctx.restore(); }
+}
+
 /** Compose in image-space units. Caller supplies preview scale/offset/DPR transform.
  * Reuse the same bitmap/layout for preview and export; neither function mutates it.
  */
@@ -34,6 +53,7 @@ export function composeWatermark(
   ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D,
   bitmap: ImageBitmap, mark: Watermark, area: Size,
 ): void {
+  if (mark.mode === 'tiled') { composeTiledWatermark(ctx, bitmap, mark, area); return; }
   ctx.save();
   try {
     ctx.translate(mark.x * area.width, mark.y * area.height);
