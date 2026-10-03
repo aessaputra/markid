@@ -1,8 +1,9 @@
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
-for(const theme of ['light','dark']) for(const width of [320,1280]) test(`axe WCAG2 AA ${theme} ${width}: editor and final image/PDF, keyboard`,async({page},info)=>{
+for(const colorScheme of ['light','dark'] as const) for(const width of [320,1280]) test(`axe WCAG2 AA ${colorScheme} ${width}: editor and final image/PDF, keyboard`,async({page},info)=>{
  await page.setViewportSize({width,height:800});
- await page.goto('/');await page.getByLabel('Theme').selectOption(theme);
+ await page.emulateMedia({colorScheme});
+ await page.goto('/');
  const scan=async(stage:string)=>{
   const results=await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21a','wcag21aa']).analyze();
   await info.attach(`${stage}-axe`,{body:JSON.stringify(results),contentType:'application/json'});

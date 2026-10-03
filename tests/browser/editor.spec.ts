@@ -72,17 +72,28 @@ test('all nine position presets place the watermark inside the source',async ({p
  await page.goto('/');await page.locator('input[type=file]').setInputFiles(portrait);
  await page.getByLabel('Watermark text').fill('Positions');
  const names = ['Top left','Top','Top right','Left','Center','Right','Bottom left','Bottom','Bottom right'];
- // Fixed preset anchors match WatermarkControls (BentoPDF-style 0.15/0.5/0.85).
- const seen = [{label:'Top left',x:0.15,y:0.15},{label:'Top',x:0.5,y:0.15},{label:'Top right',x:0.85,y:0.15},{label:'Left',x:0.15,y:0.5},{label:'Center',x:0.5,y:0.5},{label:'Right',x:0.85,y:0.5},{label:'Bottom left',x:0.15,y:0.85},{label:'Bottom',x:0.5,y:0.85},{label:'Bottom right',x:0.85,y:0.85}];
- expect(seen.every(p => p.x >= 0 && p.x <= 1 && p.y >= 0 && p.y <= 1)).toBe(true);
  for (const name of names) {
   await page.getByRole('button', { name, exact: true }).click();
   await expect(page.getByRole('button', { name, exact: true })).toHaveAttribute('aria-pressed', 'true');
  }
- // Corner presets stay inside the source instead of collapsing to the center.
- const xs = seen.map(p => p.x), ys = seen.map(p => p.y);
- expect(Math.min(...xs)).toBeGreaterThan(0);expect(Math.max(...xs)).toBeLessThan(1);
- expect(Math.min(...ys)).toBeGreaterThan(0);expect(Math.max(...ys)).toBeLessThan(1);
+});
+test('long corner text stays fully visible instead of clipping',async ({page}) => {
+ await page.setViewportSize({width:1280,height:800});await page.goto('/');await page.locator('input[type=file]').setInputFiles(portrait);
+ await page.getByLabel('Watermark text').fill('For verification only, 2026-10-03');
+ await page.getByLabel('Size',{exact:true}).fill('5');await page.getByLabel('Size',{exact:true}).press('Enter');
+ for (const name of ['Bottom left','Top right']) {
+  await page.getByRole('button',{name,exact:true}).click();
+  await page.locator('.preview-frame').scrollIntoViewIfNeeded();
+  const selection=await page.locator('.watermark-selection').boundingBox(),frame=await page.locator('.preview-frame').boundingBox(),canvas=await page.locator('.editor-canvas').boundingBox();
+  const dims=await page.locator('.editor-canvas').evaluate(n => ({w:Number((n as HTMLElement).dataset.imageWidth),h:Number((n as HTMLElement).dataset.imageHeight)}));
+  const scale=Math.min(canvas!.width/dims.w,canvas!.height/dims.h);
+  const imageBox={x:canvas!.x+(canvas!.width-dims.w*scale)/2,y:canvas!.y+(canvas!.height-dims.h*scale)/2,width:dims.w*scale,height:dims.h*scale};
+  expect(selection!.x).toBeGreaterThanOrEqual(imageBox.x-1);
+  expect(selection!.y).toBeGreaterThanOrEqual(imageBox.y-1);
+  expect(selection!.x+selection!.width).toBeLessThanOrEqual(imageBox.x+imageBox.width+1);
+  expect(selection!.y+selection!.height).toBeLessThanOrEqual(imageBox.y+imageBox.height+1);
+  expect(selection!.x).toBeGreaterThanOrEqual(frame!.x-1);
+ }
 });
 test('drag uses image space and ends on cancellation or lost capture',async ({page}) => {
  await page.goto('/');await page.locator('input[type=file]').setInputFiles(portrait);

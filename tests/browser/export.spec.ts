@@ -124,13 +124,13 @@ test('capability fallback yields UI, locks file/style/drag and releases final UR
  });
  await page.goto('/');await page.getByLabel('Choose file',{exact:true}).setInputFiles('tests/fixtures/images/exif-1.jpg');
  await page.getByLabel('Watermark text').fill('Only');await expect(page.locator('.watermark-selection')).toBeVisible();
- const anchor=await page.locator('.watermark-selection').getAttribute('style');
+ await expect(page.getByRole('button',{name:'Center',exact:true})).toHaveAttribute('aria-pressed','true');
  await page.getByRole('button',{name:'Preview',exact:true}).click();
  await expect(page.getByText('Processing…',{exact:true})).toBeVisible();
  await expect(page.locator('.watermark-selection')).toHaveClass(/locked/);
  await page.locator('.watermark-selection').dispatchEvent('pointerdown',{pointerId:1,button:0});
  await page.locator('.preview-frame').dispatchEvent('pointermove',{pointerId:1,clientX:20,clientY:20});
- expect(await page.locator('.watermark-selection').getAttribute('style')).toBe(anchor);
+ await expect(page.getByRole('button',{name:'Center',exact:true})).toHaveAttribute('aria-pressed','true');
  await expect(page.getByLabel('Choose file',{exact:true})).toBeDisabled();await expect(page.getByRole('button',{name:'Change file',exact:true})).toBeDisabled();
  await expect(page.getByLabel('Watermark text')).toBeDisabled();await expect(page.getByRole('button',{name:'Reset',exact:true})).toBeDisabled();
  await expect(page.getByRole('button',{name:'Download',exact:true})).toBeEnabled();

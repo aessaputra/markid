@@ -1,10 +1,10 @@
 <script lang="ts">
  import { onDestroy, onMount, untrack } from 'svelte';
- import type { LoadedImage, Watermark, Point } from '../editor/types';
+ import type { LoadedImage, Size, Watermark, Point } from '../editor/types';
  import { createPreviewCache, drawPreview, type PreviewCache } from '../editor/preview';
  import { renderWatermark } from '../editor/watermark';
  import { containTransform, toImagePoint, clampImagePoint } from '../editor/geometry';
- let { image, mark, onposition, onsize, onerror, disabled=false }: { image: LoadedImage; mark: Watermark; disabled?:boolean; onposition: (point: Point) => void; onsize: (sizeRatio: number) => void; onerror: (error: string) => void } = $props();
+ let { image, mark, onposition, onsize, onerror, disabled=false, onwatermark=()=>{} }: { image: LoadedImage; mark: Watermark; disabled?:boolean; onposition: (point: Point) => void; onsize: (sizeRatio: number) => void; onerror: (error: string) => void; onwatermark?: (info: { image: Size; watermark: Size | null }) => void } = $props();
  let canvas: HTMLCanvasElement;
  let viewport = $state({width:1,height:1});
  let dpr=$state(window.devicePixelRatio || 1);
@@ -54,6 +54,15 @@
    bitmap=null;
    renderWatermark(snapshot,area).then(value => {if(stale) value.close();else {owned=value;bitmap=value;}}).catch(() => {if(!stale) onerror('Watermark could not be rendered.');});
    return () => {stale=true;owned?.close();};
+ });
+ let notifiedKey = '';
+ $effect(() => {
+   const info = { image: { ...image.size }, watermark: bitmap ? { width: bitmap.width, height: bitmap.height } : null };
+   const key = `${info.image.width}x${info.image.height}:${info.watermark?.width ?? -1}x${info.watermark?.height ?? -1}`;
+   if (key !== notifiedKey) {
+     notifiedKey = key;
+     untrack(() => onwatermark(info));
+   }
  });
  $effect(() => {
    const source=cache, asset=bitmap, snapshot={...mark};

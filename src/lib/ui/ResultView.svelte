@@ -19,7 +19,7 @@
 <section aria-label="Result preview" class="panel grid gap-4">
  {#if url}
   {#if result.kind==='pdf' && result.pdf}<PdfPreview pdf={result.pdf} onready={()=>decoded=true} onerror={message=>{decoded=false;onerror(message);}} />{:else}
-  <img src={url} alt="Final JPEG preview" class="max-h-[65vh] max-w-full object-contain" onload={() => decoded=true} onerror={() => {decoded=false;onerror('Export failed. Try again.');}} />
+  <img src={url} alt="Final JPEG preview" class="block h-auto max-h-[65vh] w-full rounded-lg bg-white object-contain" onload={() => decoded=true} onerror={() => {decoded=false;onerror('Export failed. Try again.');}} />
   {/if}
   <p>{result.blob.size.toLocaleString('en-US')} bytes{#if result.kind==='image'} · {result.size?.width} × {result.size?.height} px{:else} · {result.pdf?.pageCount} pages{/if}</p>
   <Button primary disabled={!decoded} onclick={download}>Download</Button>

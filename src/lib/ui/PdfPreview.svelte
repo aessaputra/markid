@@ -3,7 +3,7 @@
  import {previewPdf} from '../pdf/preview';
  import EditorPreview from './EditorPreview.svelte';
  import PdfPager from './PdfPager.svelte';
- let {pdf,mark=null,disabled=false,onposition=()=>{},onsize=()=>{},onerror=()=>{},onready=()=>{}}:{pdf:LoadedPdf;mark?:Watermark|null;disabled?:boolean;onposition?:(point:Point)=>void;onsize?:(sizeRatio:number)=>void;onerror?:(message:string)=>void;onready?:()=>void}=$props();
+ let {pdf,mark=null,disabled=false,onposition=()=>{},onsize=()=>{},onerror=()=>{},onready=()=>{},onwatermark=()=>{}}:{pdf:LoadedPdf;mark?:Watermark|null;disabled?:boolean;onposition?:(point:Point)=>void;onsize?:(sizeRatio:number)=>void;onerror?:(message:string)=>void;onready?:()=>void;onwatermark?:(info:{image:Size;watermark:Size|null})=>void}=$props();
  let pageIndex=$state(0),image=$state.raw<LoadedImage|null>(null),loading=$state(false);
  let display=$state<Size|null>(null);
  function measure(node:HTMLDivElement) {
@@ -24,7 +24,7 @@
 <PdfPager {pageIndex} pageCount={pdf.pageCount} disabled={disabled || loading} onchange={index=>pageIndex=index} />
 <div class="pdf-viewport" use:measure>
 {#if image}
- {#if mark}<EditorPreview {image} {mark} {disabled} {onsize} onposition={p=>onposition({x:p.x/image!.size.width,y:p.y/image!.size.height})} {onerror} />
+ {#if mark}<EditorPreview {image} {mark} {disabled} {onsize} onwatermark={onwatermark} onposition={p=>onposition({x:p.x/image!.size.width,y:p.y/image!.size.height})} {onerror} />
  {:else}<canvas aria-label="Final PDF preview" class="h-full w-full object-contain" use:paint={image}>Final PDF preview</canvas>{/if}
 {:else}<p>Loading…</p>{/if}
 </div>

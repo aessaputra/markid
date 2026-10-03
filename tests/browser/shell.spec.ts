@@ -91,11 +91,11 @@ for (const width of [320, 1280]) test(`long file identity stays compact at ${wid
   expect(change.y + change.height).toBeLessThanOrEqual(preview.y);
 });
 
-for (const width of [320, 390, 768, 1280]) for (const theme of ['light', 'dark']) {
-  test(`picker aligns with the header at ${width}px in ${theme}`, async ({ page }) => {
-    await page.setViewportSize({width,height:800});
-    await page.goto('/');
-    await page.getByLabel('Theme').selectOption(theme);
+for (const width of [320, 390, 768, 1280]) for (const colorScheme of ['light', 'dark'] as const) {
+ test(`picker aligns with the header at ${width}px in ${colorScheme}`, async ({ page }) => {
+   await page.setViewportSize({width,height:800});
+   await page.emulateMedia({colorScheme});
+   await page.goto('/');
     const header = (await page.locator('header').boundingBox())!;
     const panel = (await page.getByRole('region', {name:'File selection'}).boundingBox())!;
     expect(panel.x).toBeCloseTo(header.x, 1);

@@ -1,11 +1,19 @@
 <script lang="ts">
- import type { Watermark } from '../editor/types';
+ import type { Size, Watermark } from '../editor/types';
+ import { clampPresetToVisible } from '../editor/geometry';
  import Field from './Field.svelte';
  import RangeField from './RangeField.svelte';
  import Button from './Button.svelte';
- let { mark, onchange, onreset, onpreview, ready }: { mark: Watermark; onchange: (value: Watermark) => void; onreset: () => void; onpreview: () => void; ready: boolean } = $props();
-const positions = [{label:'Top left',x:.15,y:.15},{label:'Top',x:.5,y:.15},{label:'Top right',x:.85,y:.15},{label:'Left',x:.15,y:.5},{label:'Center',x:.5,y:.5},{label:'Right',x:.85,y:.5},{label:'Bottom left',x:.15,y:.85},{label:'Bottom',x:.5,y:.85},{label:'Bottom right',x:.85,y:.85}];
-const selected = $derived(positions.find(p => Math.abs(mark.x-p.x)<1e-6 && Math.abs(mark.y-p.y)<1e-6)?.label);
+ let { mark, onchange, onreset, onpreview, ready, area=null }: { mark: Watermark; onchange: (value: Watermark) => void; onreset: () => void; onpreview: () => void; ready: boolean; area?: { image: Size; watermark: Size | null } | null } = $props();
+ const positions = [{label:'Top left',x:.15,y:.15},{label:'Top',x:.5,y:.15},{label:'Top right',x:.85,y:.15},{label:'Left',x:.15,y:.5},{label:'Center',x:.5,y:.5},{label:'Right',x:.85,y:.5},{label:'Bottom left',x:.15,y:.85},{label:'Bottom',x:.5,y:.85},{label:'Bottom right',x:.85,y:.85}];
+ // Inset corner/edge taps so the full rotated text stays visible. Drag keeps
+ // center clamp (BentoPDF parity) and may still hang half out.
+ const placed = $derived(positions.map(p => {
+  if (!area?.watermark || !Number.isFinite(area.image.width) || !Number.isFinite(area.image.height)) return p;
+  const q = clampPresetToVisible({x:p.x,y:p.y}, area.image, area.watermark, mark.angle);
+  return {...p, x:q.x, y:q.y};
+ }));
+ const selected = $derived(placed.find(p => Math.abs(mark.x-p.x)<1e-6 && Math.abs(mark.y-p.y)<1e-6)?.label);
  function update(patch: Partial<Watermark>) { onchange({ ...mark, ...patch }); }
 </script>
 <section aria-label="Watermark settings" class="panel grid gap-5">
@@ -20,9 +28,9 @@ const selected = $derived(positions.find(p => Math.abs(mark.x-p.x)<1e-6 && Math.
  </div>
  <fieldset class="grid gap-2"><legend>Position</legend>
  <div class="position-grid">
- {#each positions as position (position.label)}
- <button type="button" aria-pressed={selected===position.label} class="pos-btn" onclick={() => update({x:position.x,y:position.y})}>{position.label}</button>
- {/each}
+  {#each placed as position (position.label)}
+  <button type="button" aria-pressed={selected===position.label} class="pos-btn" onclick={() => update({x:position.x,y:position.y})}>{position.label}</button>
+  {/each}
  </div>
  </fieldset>
  <div class="flex flex-wrap gap-3"><Button primary disabled={!ready} onclick={onpreview}>Preview</Button><Button onclick={onreset}>Reset</Button></div>
