@@ -48,7 +48,7 @@ test('source-only preview clears previous watermark and letterbox pixels', async
   const {createPreviewCache,drawPreview}=await import(String('/src/lib/editor/preview.ts'));
   const source=document.createElement('canvas');source.width=240;source.height=160;
   const s=source.getContext('2d')!;s.fillStyle='#0000ff';s.fillRect(0,0,240,160);
-  const cache=await createPreviewCache({kind:'image',source,size:{width:240,height:160},resized:false,dispose(){}},{width:240,height:240});
+  const cache=await createPreviewCache({kind:'image',source,size:{width:240,height:160},dispose(){}},{width:240,height:240});
   const out=document.createElement('canvas');out.width=out.height=240;
   const ctx=out.getContext('2d')!;ctx.fillStyle='#ff0000';ctx.fillRect(0,0,240,240);
   try {
@@ -79,7 +79,7 @@ for (const dpr of [1, 2]) for (const { area, viewport } of [
         const source = document.createElement('canvas');
         source.width = area.width; source.height = area.height;
         source.getContext('2d')!; // Initialize a transparent, orientation-normalized source.
-        const cache = await createPreviewCache({ kind: 'image', source, size: area, resized: false, dispose() {} }, viewport, dpr);
+        const cache = await createPreviewCache({ kind: 'image', source, size: area, dispose() {} }, viewport, dpr);
         const mark = { text: 'Ágj\nFor verification only', sizeRatio: .08, x: .27, y: .71, angle: 0, opacity: .5, color: '#ff0000' };
         const bitmap = await renderWatermark(mark, area);
         const scale = Math.min(viewport.width / area.width, viewport.height / area.height);
@@ -161,7 +161,7 @@ test('preview caches the viewport source across position changes and disposes ow
     const wp='/src/lib/editor/watermark.ts';const { renderWatermark }=await import(/* @vite-ignore */ wp);
     const source=document.createElement('canvas');source.width=2400;source.height=3200;
     source.getContext('2d')!.fillRect(0,0,2400,3200);
-    const image={ kind:'image',source,size:{width:2400,height:3200},resized:false,dispose() {} };
+    const image={ kind:'image',source,size:{width:2400,height:3200},dispose() {} };
     const viewport={width:320,height:400};
     const cache=await createPreviewCache(image,viewport,2);
     const mark={text:'For verification only',sizeRatio:.05,x:.5,y:.5,angle:45,opacity:.5,color:'#f00'};
@@ -195,20 +195,12 @@ test('clockwise rotation and center are applied once with context state restored
   expect(result.clockwise).toBe(255);expect(result.wrong).toBe(0);expect(result.alpha).toBe(.8);expect(result.transform).toBe(true);
 });
 
-test('system font stack is shared between preview and export code', async ({ page }) => {
-  await page.goto('/');
-  const stack = await page.evaluate(async () => {
-    const path = '/src/lib/editor/watermark.ts';
-    const { SYSTEM_FONT } = await import(/* @vite-ignore */ path);
-    return SYSTEM_FONT;
-  });
-  expect(stack).toBe('system-ui, sans-serif');
-});
-
 test('system font resolves identically on main thread and in a worker canvas', async ({ page }) => {
   await page.goto('/');
   const result = await page.evaluate(async () => {
-    const stack = '32px system-ui, sans-serif';
+    const path = '/src/lib/editor/watermark.ts';
+    const { SYSTEM_FONT } = await import(/* @vite-ignore */ path);
+    const stack = `32px ${SYSTEM_FONT}`;
     const c = document.createElement('canvas');
     const ctx = c.getContext('2d')!;
     ctx.font = stack;
@@ -218,8 +210,9 @@ test('system font resolves identically on main thread and in a worker canvas', a
       w.onmessage = ({ data }: MessageEvent) => { w.terminate(); resolve(data); };
       w.onerror = (e) => { w.terminate(); reject(new Error(e.message)); };
     });
-    return { main, worker };
+    return { stack: SYSTEM_FONT, main, worker };
   });
+  expect(result.stack).toBe('system-ui, sans-serif');
   expect(result.main.width).toBeGreaterThan(0);
   expect(result.worker).toEqual(result.main);
 });

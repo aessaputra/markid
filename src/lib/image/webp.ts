@@ -17,9 +17,8 @@ export function orientWebp(image:LoadedImage,orientation:number):LoadedImage {
  try {
   const {width:w,height:h}=image.size,display=orientation>=5?{width:h,height:w}:image.size,size=validateSize(display);
   const c=document.createElement('canvas');c.width=size.width;c.height=size.height;const ctx=c.getContext('2d');if(!ctx)throw new Error('No canvas.');
-  ctx.scale(size.width/display.width,size.height/display.height);
   const matrices:Record<number,number[]>={2:[-1,0,0,1,w,0],3:[-1,0,0,-1,w,h],4:[1,0,0,-1,0,h],5:[0,1,1,0,0,0],6:[0,1,-1,0,h,0],7:[0,-1,-1,0,h,w],8:[0,-1,1,0,0,w]};
   const [a,b,d,e,x,y]=matrices[orientation];ctx.transform(a,b,d,e,x,y);ctx.drawImage(image.source,0,0);
-  let disposed=false;return {kind:'image',source:c,size,resized:image.resized||size.width!==display.width||size.height!==display.height,dispose(){if(!disposed){disposed=true;c.width=0;c.height=0;}}};
+  let disposed=false;return {kind:'image',source:c,size,dispose(){if(!disposed){disposed=true;c.width=0;c.height=0;}}};
  } finally {image.dispose();}
 }

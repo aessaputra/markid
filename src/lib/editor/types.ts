@@ -18,7 +18,6 @@ export type LoadedImage = {
   kind: 'image';
   size: Size;
   source: CanvasImageSource;
-  resized: boolean;
   dispose(): void;
 };
 

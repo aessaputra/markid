@@ -1,7 +1,7 @@
 import { expect, test, vi } from 'vitest';
 import { ImageController } from '../../src/lib/editor/controller';
 import type { LoadedImage } from '../../src/lib/editor/types';
-const image = (): LoadedImage => ({kind:'image',size:{width:1,height:1},source:{} as CanvasImageSource,resized:false,dispose:vi.fn()});
+const image = (): LoadedImage => ({kind:'image',size:{width:1,height:1},source:{} as CanvasImageSource,dispose:vi.fn()});
 function deferred() { let resolve!: (x:LoadedImage)=>void; let reject!: (x:Error)=>void; const promise = new Promise<LoadedImage>((a,b)=>{resolve=a;reject=b;}); return {promise,resolve,reject}; }
 test('failed replacement retains current; successful replacement releases it once', async () => {
   const a=deferred(), b=deferred(), c=deferred(); const queue=[a,b,c];

@@ -39,9 +39,9 @@ test('12MP/48MP inputs preserve original dimensions', async ({page}) => {
     const result=await page.evaluate(async bytes=>{
       const {loadImage}=await import(/* @vite-ignore */ String('/src/lib/image/load.ts')) as typeof import('../../src/lib/image/load');
       const image=await loadImage(new File([new Uint8Array(bytes)],'large.jpg'));
-      const result={size:image.size,resized:image.resized};image.dispose();return result;
+      const result={size:image.size};image.dispose();return result;
     },bytes);
-    expect(result).toEqual({size:name==='12mp.jpg'?{width:4000,height:3000}:{width:8000,height:6000},resized:false});
+    expect(result).toEqual({size:name==='12mp.jpg'?{width:4000,height:3000}:{width:8000,height:6000}});
   }
 });
 test('bitmap rejection falls back; URL cleanup and PNG alpha survive', async ({page}) => {

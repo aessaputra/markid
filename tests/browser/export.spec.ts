@@ -43,7 +43,7 @@ for (const area of [{width:600,height:400},{width:400,height:600}]) test(`real w
   const {renderWatermark}=await import(String('/src/lib/editor/watermark.ts'));
   const canvas=document.createElement('canvas');canvas.width=area.width;canvas.height=area.height;
   const source=await createImageBitmap(canvas);
-  const image={kind:'image',source,size:area,resized:false,dispose(){}};
+  const image={kind:'image',source,size:area,dispose(){}};
   const out=[];
   try {
    for(const angle of [-180,0,45,180]) for(const opacity of [0,.5]) {
@@ -80,7 +80,7 @@ test('noisy original source encodes above 1MiB with worker/fallback parity',asyn
   const noise=ctx.createImageData(c.width,c.height);let seed=42;
   for(let i=0;i<noise.data.length;i+=4){for(let k=0;k<3;k++){seed=(Math.imul(seed,1664525)+1013904223)>>>0;noise.data[i+k]=seed>>>24;}noise.data[i+3]=255;}
   ctx.putImageData(noise,0,0);
-  const source=await createImageBitmap(c);const image={kind:'image',source,size:{width:c.width,height:c.height},resized:false,dispose(){}};
+  const source=await createImageBitmap(c);const image={kind:'image',source,size:{width:c.width,height:c.height},dispose(){}};
   const mark={text:'For verification only',sizeRatio:.06,x:.5,y:.5,angle:45,opacity:.8,color:'#ffffff'};
   const out=[];
   for(const forceMain of [false,true]) {
@@ -98,7 +98,7 @@ for(const mode of ['null','empty','mime','throw','corrupt','large-corrupt'] as c
  const error=await page.evaluate(async mode=>{
   const {exportImage}=await import(String('/src/lib/image/export.ts'));
   const c=document.createElement('canvas');c.width=c.height=100;c.getContext('2d');
-  const image={kind:'image',source:c,size:{width:100,height:100},resized:false,dispose(){}};
+  const image={kind:'image',source:c,size:{width:100,height:100},dispose(){}};
   const mark={text:'For verification only',sizeRatio:.05,x:.5,y:.5,angle:0,opacity:0,color:'#000'};
   const original=HTMLCanvasElement.prototype.toBlob;
   HTMLCanvasElement.prototype.toBlob=function(callback){

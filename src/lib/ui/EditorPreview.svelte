@@ -19,7 +19,8 @@
  let frame: HTMLDivElement;
  let gesture: {id:number; mode:'move'|'resize'; center:Point; offset:Point; distance:number; size:number} | null = null;
  const projection = $derived(containTransform(image.size, viewport));
- const selection = $derived(bitmap && mark.text.trim() ? {
+ const tileScale = $derived(mark.mode === 'tiled' ? Math.min(image.size.width,image.size.height)/1600 : 1);
+ const selection = $derived(mark.mode !== 'tiled' && bitmap && mark.text.trim() ? {
    x:projection.x + mark.x * image.size.width * projection.scale,
    y:projection.y + mark.y * image.size.height * projection.scale,
    width:bitmap.width * projection.scale, height:bitmap.height * projection.scale,
@@ -29,10 +30,11 @@
    if(active && frame?.hasPointerCapture(active.id)) frame.releasePointerCapture(active.id);
  }
  onDestroy(cleanup);
- $effect(() => { void disabled; void image; untrack(cleanup); });
+ $effect(() => { void disabled; void image; void mode; untrack(cleanup); });
  const text = $derived(mark.text);
  const sizeRatio = $derived(mark.sizeRatio);
  const color = $derived(mark.color);
+ const mode = $derived(mark.mode);
  function measure(node: HTMLCanvasElement) {
    const observer = new ResizeObserver(([entry]) => { viewport={width:Math.max(1,entry.contentRect.width),height:Math.max(1,entry.contentRect.height)}; });
    observer.observe(node);
@@ -47,7 +49,7 @@
  });
  $effect(() => {
    // Position/opacity/angle only change composition, not the text asset.
-   const style={text,sizeRatio,color};
+   const style={text,sizeRatio,color,mode};
    const snapshot={...untrack(() => mark),...style};
    const area=image.size;
    let stale=false, owned: ImageBitmap | null=null;
@@ -57,7 +59,7 @@
  });
  let notifiedKey = '';
  $effect(() => {
-   const info = { image: { ...image.size }, watermark: bitmap ? { width: bitmap.width, height: bitmap.height } : null };
+   const info = { image: { ...image.size }, watermark: bitmap ? { width: bitmap.width * tileScale, height: bitmap.height * tileScale } : null };
    const key = `${info.image.width}x${info.image.height}:${info.watermark?.width ?? -1}x${info.watermark?.height ?? -1}`;
    if (key !== notifiedKey) {
      notifiedKey = key;
@@ -79,8 +81,7 @@
    return toImagePoint({x:event.clientX-bounds.left,y:event.clientY-bounds.top},image.size,viewport);
  }
  function start(event:PointerEvent) {
-   if (disabled || gesture || event.button !== 0 || !selection) return;
-  if (mark.mode === 'tiled' && !(event.target as HTMLElement).closest('.resize-handle')) return;
+   if (disabled || mark.mode === 'tiled' || gesture || event.button !== 0 || !selection) return;
    const p=point(event), center={x:mark.x*image.size.width,y:mark.y*image.size.height};
    const target=event.target as HTMLElement;
    gesture={id:event.pointerId,mode:target.closest('.resize-handle')?'resize':'move',center,
@@ -88,7 +89,7 @@
    frame.setPointerCapture(event.pointerId);event.preventDefault();
  }
  function move(event: PointerEvent) {
-   if(disabled) {cleanup();return;}
+   if(disabled || mark.mode === 'tiled') {cleanup();return;}
    const active=gesture;if(!active || active.id!==event.pointerId) return;
    const p=point(event);
    if(active.mode==='resize') onsize(Math.max(.01,Math.min(.20,active.size*Math.hypot(p.x-active.center.x,p.y-active.center.y)/active.distance)));
@@ -107,4 +108,6 @@
  </div>
  {/if}
 </div>
+{#if mark.mode !== 'tiled'}
 <p class="text-sm text-muted">Drag the watermark to move it; drag a corner to resize. Or use Position and Size below.</p>
+{/if}

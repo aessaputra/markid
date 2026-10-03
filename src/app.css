@@ -29,7 +29,6 @@ input[type="color"] {padding:6px;min-height:44px;width:100%;}
 .pos-btn {min-height:44px;padding:6px 4px;font-size:0.75rem;line-height:1.2;white-space:normal;border-radius:8px;border:1px solid var(--control-border);background:var(--surface);color:var(--text);cursor:pointer;}
 .pos-btn:hover:not(:disabled) {border-color:var(--focus);}
 .pos-btn[aria-pressed="true"] {background:var(--accent);border-color:var(--accent);color:#fff;}
-.pos-btn:disabled {opacity:.5;cursor:not-allowed;}
 .range-row {display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;min-width:0;}
 .range-number {display:flex;align-items:center;gap:2px;flex:none;width:clamp(3.25rem,15vw,3.75rem);min-width:0;height:44px;padding:0 6px;border:1px solid var(--control-border);border-radius:6px;background:var(--surface);box-sizing:border-box;}
 .range-number input[type="number"] {flex:1;min-width:0;width:auto;border:0;background:transparent;min-height:0;height:100%;padding:0;font-size:0.875rem;text-align:right;font-variant-numeric:tabular-nums;}
@@ -62,11 +61,8 @@ button:disabled {opacity:.5;cursor:not-allowed;}
 .pdf-viewport > .preview-frame {height:100%;min-height:0;}
 .pdf-viewport > p {display:none;}
 .pdf-viewport {position:relative;min-width:0;overflow:hidden;height:min(65vh,800px);}
-.pdf-layout .preview-panel {display:flex;flex-direction:column;}
 .pdf-layout .pdf-viewport {height:min(55vh,600px);flex:none;}
 @media (min-width:1024px) {
- .pdf-layout {align-items:stretch;}
- .pdf-layout .preview-panel {contain:size;}
  .pdf-layout .pdf-viewport {height:0;min-height:200px;flex:1;}
 }
 :focus-visible {outline:2px solid var(--focus);outline-offset:4px;}

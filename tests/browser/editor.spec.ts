@@ -126,7 +126,7 @@ test('failed preview cache creation clears its temporary canvas',async ({page}) 
  const original=document.createElement.bind(document);let temp:HTMLCanvasElement | null=null;
  document.createElement=((tag:string,...args:unknown[]) => {const node=original(tag,...args as []);if(tag==='canvas') temp=node as HTMLCanvasElement;return node;}) as typeof document.createElement;
  window.createImageBitmap=async()=>{throw new Error('forced cache failure');};
- let failed=false;try {await createPreviewCache({kind:'image',source,size:{width:80,height:120},resized:false,dispose(){}},{width:320,height:200});}catch {failed=true;}
+ let failed=false;try {await createPreviewCache({kind:'image',source,size:{width:80,height:120},dispose(){}},{width:320,height:200});}catch {failed=true;}
  return {failed,width:temp!.width,height:temp!.height};
  });
  expect(result).toEqual({failed:true,width:0,height:0});
@@ -238,13 +238,5 @@ test('failed text edit clears old watermark pixels while retaining source',async
  await rejectAssets(page);
  expect((await previewPixels(page)).red).toBe(0);
  await expect(page.getByLabel('Watermark text')).toHaveValue('NEW FAILED MARK');
-});
-
-test('asset preparation failure keeps text and source',async ({page}) => {
- await page.goto('/');await page.locator('input[type=file]').setInputFiles(portrait);
- await holdAssetFailure(page);
- await page.getByLabel('Watermark text').fill('Keep my text');
- await rejectAssets(page);
- await expect(page.getByLabel('Watermark text')).toHaveValue('Keep my text');
- await expect(page.getByLabel('Image preview')).toHaveAttribute('data-image-width','80');
+ await expect(page.getByLabel('Image preview')).toHaveAttribute('data-image-width','240');
 });

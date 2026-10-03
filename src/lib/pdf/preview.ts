@@ -24,7 +24,7 @@ export async function previewPdf(pdf:LoadedPdf,pageIndex:number,display:Size={wi
   await render.promise;state.resources.assert();
   if(state.disposed||revision!==state.revision)throw new Error('PDF preview cancelled.');
   const owned=canvas;
-  return {kind:'image',size:{width:viewport.width,height:viewport.height},source:owned,resized:false,dispose(){owned.width=owned.height=0;}};
+  return {kind:'image',size:{width:viewport.width,height:viewport.height},source:owned,dispose(){owned.width=owned.height=0;}};
  }catch(error){if(canvas)canvas.width=canvas.height=0;throw error;}
  finally{if(state.render===render)state.render=undefined;page.cleanup();}
 }

@@ -17,7 +17,7 @@ test('worker ignores stale protocol messages and closes cloned resources after r
   const c=document.createElement('canvas');c.width=c.height=100;c.getContext('2d');
   const source=await createImageBitmap(c);
   try {
-   const r=await exportImage({kind:'image',source,size:{width:100,height:100},resized:false,dispose(){}},{text:'Only',sizeRatio:.1,x:.5,y:.5,angle:0,opacity:1,color:'#000'},{revision:42});
+   const r=await exportImage({kind:'image',source,size:{width:100,height:100},dispose(){}},{text:'Only',sizeRatio:.1,x:.5,y:.5,angle:0,opacity:1,color:'#000'},{revision:42});
    return {mime:r.blob.type,size:r.size,sourceWidth:source.width};
   } finally {source.close();}
  });
@@ -44,7 +44,7 @@ for(const probe of ['constructor','context'] as const) test(`worker-only ${probe
    const {exportImage}=await import(String('/src/lib/image/export.ts'));
    const c=document.createElement('canvas');c.width=200;c.height=100;
    const context=c.getContext('2d')!;context.fillStyle='#fff';context.fillRect(0,0,200,100);
-   const r=await exportImage({kind:'image',source:c,size:{width:200,height:100},resized:false,dispose(){}},{text:'Only',sizeRatio:.1,x:.5,y:.5,angle:0,opacity:1,color:'#000'});
+   const r=await exportImage({kind:'image',source:c,size:{width:200,height:100},dispose(){}},{text:'Only',sizeRatio:.1,x:.5,y:.5,angle:0,opacity:1,color:'#000'});
    const bytes=new Uint8Array(await r.blob.arrayBuffer());
    const decoded=await createImageBitmap(r.blob);
    const size={width:decoded.width,height:decoded.height};decoded.close();
@@ -71,7 +71,7 @@ test('actual worker encode exception remains explicit without main Canvas fallba
   try {
    const {exportImage}=await import(String('/src/lib/image/export.ts'));
    const c=document.createElement('canvas');c.width=c.height=100;c.getContext('2d');
-   try {await exportImage({kind:'image',source:c,size:{width:100,height:100},resized:false,dispose(){}},{text:'Only',sizeRatio:.1,x:.5,y:.5,angle:0,opacity:1,color:'#000'});return {error:'unexpected success',encodes};}
+   try {await exportImage({kind:'image',source:c,size:{width:100,height:100},dispose(){}},{text:'Only',sizeRatio:.1,x:.5,y:.5,angle:0,opacity:1,color:'#000'});return {error:'unexpected success',encodes};}
    catch(e){return {error:(e as Error).message,encodes};}
   } finally {HTMLCanvasElement.prototype.toBlob=native;}
  });

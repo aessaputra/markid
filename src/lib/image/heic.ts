@@ -5,9 +5,8 @@ export async function normalizeBitmap(bitmap:ImageBitmap):Promise<LoadedImage>{
  const source=bitmap;
  try {
   const working=validateSize({width:bitmap.width,height:bitmap.height});
-  const resized=false;
-  let disposed=false;return {kind:'image',source,size:working,resized,dispose(){if(!disposed){disposed=true;source.close();}}};
- }catch{source.close();if(source!==bitmap)bitmap.close();throw new Error('Could not open this file. Try a JPG or PNG.');}
+  let disposed=false;return {kind:'image',source,size:working,dispose(){if(!disposed){disposed=true;source.close();}}};
+ }catch{source.close();throw new Error('Could not open this file. Try a JPG or PNG.');}
 }
 /** CSP entry uses a lazy local Blob worker in tested 1.6.5, not unsafe-eval. */
 export async function decodeHeif(file:File):Promise<LoadedImage>{

@@ -17,6 +17,10 @@
  function update(patch: Partial<Watermark>) { onchange({ ...mark, ...patch }); }
 </script>
 <section aria-label="Watermark settings" class="panel grid gap-5">
+ <div class="grid grid-cols-2 gap-2" role="group" aria-label="Watermark layout">
+  <button type="button" aria-pressed={(mark.mode ?? 'single') === 'single'} class="pos-btn" onclick={() => update({ mode: 'single' })}>Single</button>
+  <button type="button" aria-pressed={(mark.mode ?? 'single') === 'tiled'} class="pos-btn" onclick={() => update({ mode: 'tiled' })}>Tiled</button>
+ </div>
  <Field id="text" label="Watermark text"><textarea id="text" rows="3" value={mark.text} oninput={e => update({text:e.currentTarget.value})}></textarea></Field>
  <div class="grid min-w-0 grid-cols-1 gap-4 min-[420px]:grid-cols-2">
  <RangeField id="size" label="Size" value={mark.sizeRatio*100} min={1} max={20} onchange={value => update({sizeRatio:value/100})} />
@@ -26,19 +30,14 @@
  <RangeField id="opacity" label="Opacity" value={mark.opacity*100} min={0} max={100} onchange={value => update({opacity:value/100})} />
  <RangeField id="rotation" label="Angle" value={mark.angle} min={-180} max={180} onchange={value => update({angle:value})} />
  </div>
- <fieldset class="grid gap-2"><legend>Layout</legend>
- <div class="flex flex-wrap gap-2" role="group" aria-label="Watermark layout">
-  <button type="button" aria-pressed={(mark.mode ?? 'single') === 'single'} class="pos-btn" onclick={() => update({ mode: 'single' })}>Single</button>
-  <button type="button" aria-pressed={(mark.mode ?? 'single') === 'tiled'} class="pos-btn" onclick={() => update({ mode: 'tiled' })}>Tiled</button>
- </div>
- {#if mark.mode === 'tiled'}<p class="text-sm text-muted">Tiled covers the whole page. Position does not apply.</p>{/if}
-</fieldset>
-<fieldset class="grid gap-2" disabled={mark.mode === 'tiled'}><legend>Position</legend>
+{#if mark.mode !== 'tiled'}
+<fieldset class="grid gap-2"><legend>Position</legend>
  <div class="position-grid">
   {#each placed as position (position.label)}
   <button type="button" aria-pressed={selected===position.label} class="pos-btn" onclick={() => update({x:position.x,y:position.y})}>{position.label}</button>
   {/each}
  </div>
  </fieldset>
+ {/if}
  <div class="flex flex-wrap gap-3"><Button primary disabled={!ready} onclick={onpreview}>Preview</Button><Button onclick={onreset}>Reset</Button></div>
 </section>
