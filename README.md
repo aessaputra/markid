@@ -1,57 +1,97 @@
+<img src="public/favicon.svg" width="40" height="40" alt="MarkID icon" />
+
 # MarkID
 
-Local, single-file text watermark editor built with Svelte 5, TypeScript, Vite and Canvas. Choose a file, edit the watermark, **Preview** the final encoded result, then **Download**. Images become JPEG; PDFs remain PDFs with a watermark on every page. Changing settings invalidates the previous result; export starts from the original source, not a previous export.
+Add a text watermark to an image or PDF before sharing. MarkID runs in your browser: files, filenames, and watermark text are processed locally, without uploads or automatic file storage.
 
-**Experimental local build, not approved for release or distribution.** Physical-device, cross-engine/minimum-browser and embedded-decoder LGPL gates remain blocked. No deployment host has been selected. See [release matrix](docs/testing/release-matrix.md), [codec evidence](docs/testing/codec-report.md) and [PDF evidence](docs/testing/pdf-report.md).
+Built with Svelte 5, TypeScript, Vite, and Canvas. PDF preview uses PDF.js; PDF export uses pdf-lib.
 
-## Tested inputs (not universal codec support)
+> [!IMPORTANT]
+> MarkID is experimental and has not been deployed. Physical-device, cross-browser, and embedded HEIC decoder LGPL distribution checks remain incomplete. See the [third-party summary](#third-party).
 
-Chromium 153 on Linux has exercised genuine synthetic fixtures:
-- JPEG and PNG, including EXIF/eXIf orientations 1–8, mirrored forms, PNG transparency (JPEG background becomes white).
-- Static WebP lossy/lossless/alpha, plus EXIF rotation/mirror; static AVIF and container rotation/mirror.
-- HEVC HEIC/HEIF via lazy local `heic-to/csp` fallback, including rotation/mirror. These are locally encoded bitstreams, **not iPhone/Android camera or native HEVC proof**.
-- PDFs with text, scan images, multiple pages, CropBox/rotation, normalized unusual boxes, CMaps and standard fonts. Existing PDF page content is not rasterized on export; the text watermark is a shared raster PNG asset.
+## Features
 
-Animated images/collections are outside scope. HDR, color/profile fidelity, arbitrary codec variants, extreme sources, Safari/Firefox and in-app browsers are not verified. Failed inputs retain the previous valid editor. Locked PDFs are rejected: `PDF is locked. Unlock it and try again.` Recognized signature fields/dictionaries are conservatively rejected pending a signed-document decision; this is not a forensic signature detector or a signature-preservation guarantee.
+- Single or tiled multiline watermarks, with size, color, opacity, and angle controls.
+- Nine position presets, plus drag and corner resizing in Single mode.
+- Adjustable horizontal and vertical spacing in Tiled mode.
+- Final output preview before download; every export starts from the original source.
+- Failed file replacements keep the previous editor. Reset restores watermark settings without removing the file.
+- Responsive controls, keyboard alternatives to dragging, and a theme that follows the system without storing a preference.
 
-## Limits and safety
+## Usage
 
-No fixed input byte, photo megapixel/side, or JPEG output byte limit. Photos retain their full orientation-normalized decoded dimensions. JPEG export composes once from that source and encodes once at quality .92, without staged resizing or compression. Available browser/device capacity determines what can be processed; large files can fail or exhaust memory. Empty/corrupt files and invalid dimensions still fail explicitly. PDF output has no compression promise.
+1. Choose a file or drag it into the picker.
+2. Edit the watermark and choose **Single** or **Tiled**.
+3. Select **Preview** to generate and inspect the final output.
+4. Select **Download**, or **Back to edit** to make changes.
 
-PDF raster previews adapt to the actual displayed page fit at twice its CSS dimensions, without the former 2MP/1600px/scale-2 caps. This preview sampling does not rasterize original PDF page content on export; the separate watermark asset layout remains unchanged. Full-resolution processing is not an unlimited-capacity, mobile-memory or readability guarantee. Inspect the final result before using it; synthetic small-text evidence does not establish a universal readable minimum.
+| Input | Output | Notes |
+|---|---|---|
+| JPEG, PNG | JPEG | Orientation is normalized; transparent pixels become white. |
+| Static WebP, AVIF | JPEG | Format and transform coverage depends on the browser. |
+| HEIC, HEIF | JPEG | Native decoding is attempted first, with a pinned CDN-loaded HEIC decoder fallback. |
+| PDF | PDF | Watermark added to every page; original page content is not rasterized on export. |
 
-Files, names and watermark text are processed locally; no uploads, analytics, accounts, backend or automatic file persistence. Theme follows the system dynamically; no theme preference is saved. Lazy decoder/PDF assets are fetched from the application's own origin. Downloads happen only when requested. This is not an offline/PWA guarantee: initial and lazy assets need a server. Browsers/OS may retain memory, caches or downloaded files; instant physical erasure is not promised. Hosting can log ordinary access metadata. Watermarks are not redaction, encryption or tamper-proof protection.
+Synthetic fixtures have been exercised in desktop Chromium, including image orientation and PDF CropBox/rotation. This is not universal format or real-camera compatibility. Animated images and collections are outside scope. Locked PDFs and recognized signature fields/dictionaries are rejected.
 
-**PDF warning:** Canvas preview does not execute document JavaScript/URI actions or provide interactive forms, but export is **not a sanitizer**. Original active content, links/actions, attachments and other structures may survive and may execute in another reader. Do not treat a watermarked untrusted PDF as safe.
+## Privacy and limitations
 
-## Local development and verification
+- No accounts, backend, analytics, uploads, or automatic file persistence. App and PDF assets remain local to the app origin. If native HEIC decoding fails, the browser fetches the pinned decoder library from jsDelivr; this sends ordinary request metadata to the CDN, not your file or watermark. HEIC fallback requires network/CDN availability unless the browser has cached the library; offline operation is not guaranteed.
+- Photos retain their full decoded dimensions. JPEG output is encoded once at quality `0.92`, without a fixed input-byte, megapixel, or output-byte cap. Large files can exceed browser/device capacity and fail.
+- Hosting can log ordinary access metadata. Browsers and operating systems may retain caches, memory, or downloaded files; instant physical erasure is not promised.
+- Firefox, Safari, minimum browser versions, physical Android/iOS devices, HDR, and color/profile fidelity are not yet verified.
 
-Use Node **24** (verified 24.21.0; package also permits 26 but this report does not verify it).
+> [!WARNING]
+> A watermark is not redaction, encryption, or tamper-proof protection. PDF export is not a sanitizer: original links, actions, attachments, and other active content may survive and execute in another reader. Inspect the final file before sharing it.
+
+## Third-party
+
+### LGPL Components (Pre-configured via CDN)
+
+| Component | License | Features Enabled |
+|---|---|---|
+| [heic-to 1.6.5](https://github.com/hoppergee/heic-to/tree/v1.6.5) | [LGPL-3.0](https://github.com/hoppergee/heic-to/blob/v1.6.5/LICENSE) | HEIC/HEIF fallback decoding to bitmap, including upstream libheif/libde265. |
+
+Loaded only after native HEIC decoding fails, from the pre-configured [pinned CSP module](https://cdn.jsdelivr.net/npm/heic-to@1.6.5/dist/csp/heic-to.js); no URL setting is required. The decoder is not bundled in MarkID's build. Decoding and JPEG export remain on-device; fetching the library requires CDN/network availability. CDN delivery does not by itself resolve license obligations.
+
+### Bundled components
+
+| Component | License | Features Enabled |
+|---|---|---|
+| [pdf-lib 1.17.1](https://github.com/Hopding/pdf-lib) | MIT | PDF export; includes standard-fonts (MIT), upng (MIT), pako (MIT/Zlib), and tslib (0BSD). |
+| [PDF.js 4.10.38](https://github.com/mozilla/pdf.js/tree/v4.10.38) | Apache-2.0 | PDF preview and worker. |
+| Svelte and bundled helpers | MIT | Application UI; exact dependencies are recorded in `package-lock.json`. |
+| PDF CMaps and standard fonts | BSD-style / OFL, as supplied by PDF.js | Local rendering assets; upstream license files remain alongside these assets. |
+
+UI and watermarks use system fonts; no webfont is bundled. This table is a summary, not a complete distribution license package. HEIC decoder distribution verification remains incomplete.
+
+## Local development
+
+Use Node.js **24** and npm. Node.js 26 is also permitted by `package.json`.
 
 ```sh
-npm install --include=dev
+npm ci --include=dev
 npm run dev
-npm run check
+```
+
+### Checks and build
+
+```sh
 npm run lint
+npm run check
 npm run test:unit
 npx playwright install chromium
 npm run test:browser -- --workers=2
 npm run build
 ```
 
-Production-header verification uses `dist`, not Vite preview:
+Vite writes the static site to `dist/`. When the Playwright browser download is unavailable, `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` can select an existing Chromium executable.
+
+Production-header tests build and serve `dist/` on loopback with the test server's CSP, MIME, and cache settings:
 
 ```sh
-# Requires Poppler's pdftoppm for the independent PDF zoom artifact (dev-only).
+# Requires Poppler's pdftoppm for the independent PDF zoom artifact.
 npx playwright test -c playwright.csp.config.ts --project=chromium --workers=2
-# Manual loopback HTTP server (not a deployment):
-node scripts/serve-production.mjs
 ```
 
-The CSP suite builds automatically and serves on `http://127.0.0.1:5174`. It tests actual response CSP/nosniff, hashed-asset caching, HTML ETag revalidation, JPEG worker/main fallback, HEIC/PDF lazy assets, download privacy and axe accessibility in both themes. `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` optionally selects an existing Chromium installation when the download is unavailable. No machine-specific path is required in project config. Firefox/WebKit projects exist in the CSP config; do not claim they pass until their real executables and tests run. Targets Chrome 111+, Safari 16.4+, Firefox 128+ are intended minima, **not tested support claims**.
-
-## Hosting and licenses
-
-No host was selected, deployed or published. `scripts/serve-production.mjs` is a loopback verification artifact, not an HTTPS production service. Before any release, choose a host with the user, implement its actual header/cache configuration, verify HTTPS and lazy worker MIME, archive the previous immutable build, rehearse that host's exact rollback command and rerun the privacy/CSP suite against it. Those host-specific commands cannot truthfully be supplied yet.
-
-See [third-party notices](THIRD_PARTY_NOTICES.md). UI and watermark use the platform system font; PDF libraries are MIT/Apache-2.0. The embedded HEIC decoder is LGPL-3.0: notices/npm audit are **not** corresponding-source, build/relink or legal-compliance evidence. Distribution remains blocked. BentoPDF (alam00000/bentopdf, AGPL-3.0) was a research reference; no source was copied/adapted. Reference repositories and throwaway spikes are not release artifacts.
+These tests cover headers, caching, worker/fallback exports, privacy, and accessibility. They do not verify a deployed site. Firefox/WebKit projects are configured, but successful execution is still required before claiming support.

@@ -48,14 +48,15 @@ for (const [kind, path] of [
  for (const request of requests) {
   // Blob/data are local virtual URLs, never HTTP egress. No arbitrary origins/ports.
   const url = new URL(request.url);
-  if (['http:','https:'].includes(url.protocol)) expect(url.origin).toBe(new URL(baseURL!).origin);
+  if (['http:','https:'].includes(url.protocol) && request.url !== 'https://cdn.jsdelivr.net/npm/heic-to@1.6.5/dist/csp/heic-to.js') expect(url.origin).toBe(new URL(baseURL!).origin);
+  else if(request.url === 'https://cdn.jsdelivr.net/npm/heic-to@1.6.5/dist/csp/heic-to.js') expect(kind).toBe('HEIC fallback');
   else expect(['blob:','data:']).toContain(url.protocol);
   expect(request.method).toBe('GET');
   expect(decodeURIComponent(request.url)).not.toContain(secret);
   expect(decodeURIComponent(request.url)).not.toContain(filename);
   expect(request.url).not.toContain(source.toString('base64'));
   expect(request.url).not.toContain(source.toString('hex'));
-  if(baseURL?.endsWith(':5174') && ['http:','https:'].includes(url.protocol)) {
+  if(baseURL?.endsWith(':5174') && ['http:','https:'].includes(url.protocol) && request.url !== 'https://cdn.jsdelivr.net/npm/heic-to@1.6.5/dist/csp/heic-to.js') {
    expect(url.search).toBe('');
    expect(url.pathname === '/' || /^\/(assets|pdf-assets)\/[A-Za-z0-9_./-]+$/.test(url.pathname)).toBe(true);
   }
@@ -74,7 +75,7 @@ for (const [kind, path] of [
  // Vite's development HMR is not part of production; production must open no socket.
  if(baseURL?.endsWith(':5174')) expect(sockets).toEqual([]);
  else expect(sockets.every(u=>new URL(u).host===new URL(baseURL!).host)).toBe(true);
- if(kind==='HEIC fallback') expect(requests.slice(initialRequests).some(r=>/heic|csp/.test(r.url))).toBe(true);
+ if(kind==='HEIC fallback') expect(requests.slice(initialRequests).some(r=>r.url==='https://cdn.jsdelivr.net/npm/heic-to@1.6.5/dist/csp/heic-to.js')).toBe(true);
  if(kind==='PDF') expect(requests.slice(initialRequests).some(r=>/pdf.worker/.test(r.url))).toBe(true);
  await testInfo.attach('privacy-observation',{body:JSON.stringify({requests:requests.map(({url,method})=>({url,method})),stored,logs,sockets},null,2),contentType:'application/json'});
 });

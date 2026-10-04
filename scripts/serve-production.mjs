@@ -3,7 +3,7 @@ import {readFile} from 'node:fs/promises';
 import {resolve,extname} from 'node:path';
 import {createHash} from 'node:crypto';
 const root=resolve('dist');
-export const csp="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; font-src 'self'; worker-src 'self' blob:; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'; object-src 'none'";
+export const csp="default-src 'none'; script-src 'self' https://cdn.jsdelivr.net/npm/heic-to@1.6.5/dist/csp/heic-to.js; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; font-src 'self'; worker-src 'self' blob:; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'; object-src 'none'";
 const mime={'.html':'text/html','.js':'text/javascript','.mjs':'text/javascript','.css':'text/css','.woff':'font/woff','.woff2':'font/woff2','.txt':'text/plain'};
 http.createServer(async(req,res)=>{
  try {

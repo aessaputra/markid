@@ -1,8 +1,8 @@
 import { test, expect } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 for(const name of ['encoded.heic','portrait.heif','lossy.webp','lossless.webp','alpha.webp','still.avif']) {
- test(`opens and exports genuine ${name}`,async({page})=>{
-  const requests:string[]=[];page.on('request',r=>{if(!r.url().startsWith('http://127.0.0.1:')&&!r.url().startsWith('blob:')&&!r.url().startsWith('data:'))requests.push(r.url());if(r.method()!=='GET')requests.push(r.method());});
+ test(`opens and exports genuine ${name}`,async({page,baseURL})=>{
+  const requests:string[]=[];page.on('request',r=>{if(!(r.url()==='https://cdn.jsdelivr.net/npm/heic-to@1.6.5/dist/csp/heic-to.js'&&/\.hei[cf]$/.test(name))&&new URL(r.url()).origin!==new URL(baseURL!).origin&&!r.url().startsWith('blob:')&&!r.url().startsWith('data:'))requests.push(r.url());if(r.method()!=='GET')requests.push(r.method());});
   await page.goto('/');await page.getByLabel('Choose file').setInputFiles(`tests/fixtures/codecs/${name}`);
   await page.getByLabel('Watermark text').fill('For verification only');
   await expect(page.getByRole('button',{name:'Preview',exact:true})).toBeEnabled({timeout:30000});
