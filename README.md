@@ -2,7 +2,7 @@
 
 # MarkID
 
-Add a text watermark to an image or PDF before sharing. MarkID runs in your browser: files, filenames, and watermark text are processed locally, without uploads or automatic file storage.
+Add a text watermark to an image or PDF before sharing. Files, filenames, and watermark text are processed in your browser, without uploads or automatic file storage.
 
 Built with Svelte 5, TypeScript, Vite, and Canvas. PDF preview uses PDF.js; PDF export uses pdf-lib.
 
@@ -17,6 +17,41 @@ Built with Svelte 5, TypeScript, Vite, and Canvas. PDF preview uses PDF.js; PDF 
 - Final output preview before download; every export starts from the original source.
 - Failed file replacements keep the previous editor. Reset restores watermark settings without removing the file.
 - Responsive controls, keyboard alternatives to dragging, and a theme that follows the system without storing a preference.
+
+## Getting started
+
+### Prerequisites
+
+- Node.js **24** and npm. Node.js 26 is also permitted by `package.json`.
+
+### Run locally
+
+```sh
+npm ci --include=dev
+npm run dev
+```
+
+### Checks and build
+
+```sh
+npm run lint
+npm run check
+npm run test:unit
+npx playwright install chromium
+npm run test:browser -- --workers=2
+npm run build
+```
+
+Vite writes the static site to `dist/`. When the Playwright browser download is unavailable, `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` can select an existing Chromium executable.
+
+Production-header tests build and serve `dist/` on loopback with the test server's CSP, MIME, and cache settings:
+
+```sh
+# Requires Poppler's pdftoppm for the independent PDF zoom artifact.
+npx playwright test -c playwright.csp.config.ts --project=chromium --workers=2
+```
+
+These tests cover headers, caching, worker/fallback exports, privacy, and accessibility. They do not verify a deployed site. Firefox/WebKit projects are configured, but successful execution is still required before claiming support.
 
 ## Usage
 
@@ -64,34 +99,3 @@ Loaded only after native HEIC decoding fails, from the pre-configured [pinned CS
 | PDF CMaps and standard fonts | BSD-style / OFL, as supplied by PDF.js | Local rendering assets; upstream license files remain alongside these assets. |
 
 UI and watermarks use system fonts; no webfont is bundled. This table is a summary, not a complete distribution license package. HEIC decoder distribution verification remains incomplete.
-
-## Local development
-
-Use Node.js **24** and npm. Node.js 26 is also permitted by `package.json`.
-
-```sh
-npm ci --include=dev
-npm run dev
-```
-
-### Checks and build
-
-```sh
-npm run lint
-npm run check
-npm run test:unit
-npx playwright install chromium
-npm run test:browser -- --workers=2
-npm run build
-```
-
-Vite writes the static site to `dist/`. When the Playwright browser download is unavailable, `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` can select an existing Chromium executable.
-
-Production-header tests build and serve `dist/` on loopback with the test server's CSP, MIME, and cache settings:
-
-```sh
-# Requires Poppler's pdftoppm for the independent PDF zoom artifact.
-npx playwright test -c playwright.csp.config.ts --project=chromium --workers=2
-```
-
-These tests cover headers, caching, worker/fallback exports, privacy, and accessibility. They do not verify a deployed site. Firefox/WebKit projects are configured, but successful execution is still required before claiming support.
