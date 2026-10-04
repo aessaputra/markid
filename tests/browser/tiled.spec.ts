@@ -101,7 +101,8 @@ test('Tiled hides selection while Size changes pixels and Single retains placeme
   await expect(selection).toHaveCount(0);
   await expect(page.locator('.resize-handle')).toHaveCount(0);
   await expect(page.getByRole('group',{name:'Position',exact:true})).toHaveCount(0);
-  await expect(hint).toHaveCount(0);
+  await expect(hint).toBeHidden();
+  await expect(hint).toHaveAttribute('aria-hidden','true');
   await expect(page.getByText('Resize a tile with a corner, or use Size.',{exact:true})).toHaveCount(0);
   // Await the real tiled render, not the source-only frame while its bitmap loads.
   await expect.poll(pixels).not.toBe(singlePixels);

@@ -125,7 +125,7 @@ for (const colorScheme of ['light', 'dark'] as const) {
     await expect(page.getByText('Your files never leave your device')).toBeVisible();
     await button.focus();
     await expect(button).toBeFocused();
-    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(320);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
     expect((await button.boundingBox())?.height).toBeGreaterThanOrEqual(44);
     expect(await page.evaluate(() => getComputedStyle(document.body).fontFamily)).toContain('system-ui');
     await page.screenshot({ path: `test-results/shell-320-${colorScheme}.png` });

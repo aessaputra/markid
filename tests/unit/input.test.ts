@@ -1,9 +1,8 @@
 import { expect, test, vi } from 'vitest';
-import { validateSize } from '../../src/lib/input/headers';
+import { validateSize, readDimensions, readOrientation } from '../../src/lib/input/headers';
 import { checkFileSize } from '../../src/lib/input/policy';
 import { identify } from '../../src/lib/input/identify';
 import { readFileSync } from 'node:fs';
-import { readDimensions, readOrientation } from '../../src/lib/input/headers';
 const jpg = (marker = 0xc0, w = 4000, h = 3000) => new Blob([new Uint8Array([255,216,255,224,0,4,0,0,255,255,marker,0,11,8,h>>8,h&255,w>>8,w&255,1,1,17,0])], {type:'text/plain'});
 test('signature beats MIME and JPEG frames have dimensions', async () => {
   for (const m of [0xc0,0xc1,0xc2,0xc3,0xc5,0xc6,0xc7,0xc9,0xca,0xcb,0xcd,0xce,0xcf]) {

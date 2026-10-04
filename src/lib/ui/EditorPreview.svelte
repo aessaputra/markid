@@ -4,9 +4,9 @@
  import { createPreviewCache, drawPreview, type PreviewCache } from '../editor/preview';
  import { renderWatermark } from '../editor/watermark';
  import { containTransform, toImagePoint, clampImagePoint } from '../editor/geometry';
- let { image, mark, onposition, onsize, onerror, disabled=false, onwatermark=()=>{} }: { image: LoadedImage; mark: Watermark; disabled?:boolean; onposition: (point: Point) => void; onsize: (sizeRatio: number) => void; onerror: (error: string) => void; onwatermark?: (info: { image: Size; watermark: Size | null }) => void } = $props();
+ let { image, mark, onposition, onsize, onerror, disabled=false, onwatermark=()=>{}, onloading=()=>{} }: { image: LoadedImage; mark: Watermark; disabled?:boolean; onposition: (point: Point) => void; onsize: (sizeRatio: number) => void; onerror: (error: string) => void; onloading?: (loading:boolean) => void; onwatermark?: (info: { image: Size; watermark: Size | null }) => void } = $props();
  let canvas: HTMLCanvasElement;
- let viewport = $state({width:1,height:1});
+ let viewport = $state<Size | null>(null);
  let dpr=$state(window.devicePixelRatio || 1);
  onMount(()=>{
   let query:MediaQueryList;
@@ -18,9 +18,9 @@
  let bitmap = $state.raw<ImageBitmap | null>(null);
  let frame: HTMLDivElement;
  let gesture: {id:number; mode:'move'|'resize'; center:Point; offset:Point; distance:number; size:number} | null = null;
- const projection = $derived(containTransform(image.size, viewport));
+ const projection = $derived(viewport ? containTransform(image.size, viewport) : null);
  const tileScale = $derived(mark.mode === 'tiled' ? Math.min(image.size.width,image.size.height)/1600 : 1);
- const selection = $derived(mark.mode !== 'tiled' && bitmap && mark.text.trim() ? {
+ const selection = $derived(mark.mode !== 'tiled' && projection && cache && bitmap && mark.text.trim() ? {
    x:projection.x + mark.x * image.size.width * projection.scale,
    y:projection.y + mark.y * image.size.height * projection.scale,
    width:bitmap.width * projection.scale, height:bitmap.height * projection.scale,
@@ -29,22 +29,23 @@
    const active=gesture;gesture=null;
    if(active && frame?.hasPointerCapture(active.id)) frame.releasePointerCapture(active.id);
  }
- onDestroy(cleanup);
+ onDestroy(() => {cleanup();if(canvas) canvas.width=canvas.height=0;});
  $effect(() => { void disabled; void image; void mode; untrack(cleanup); });
  const text = $derived(mark.text);
  const sizeRatio = $derived(mark.sizeRatio);
  const color = $derived(mark.color);
  const mode = $derived(mark.mode);
- function measure(node: HTMLCanvasElement) {
-   const observer = new ResizeObserver(([entry]) => { viewport={width:Math.max(1,entry.contentRect.width),height:Math.max(1,entry.contentRect.height)}; });
+ function measure(node: HTMLDivElement) {
+   const observer = new ResizeObserver(([entry]) => { const {width,height}=entry.contentRect;viewport=width>0 && height>0 ? {width,height} : null; });
    observer.observe(node);
-   return {destroy() {observer.disconnect(); node.width=node.height=0;}};
+   return {destroy() {observer.disconnect();}};
  }
  $effect(() => {
-   const source=image, size={...viewport}, pixelRatio=dpr;
+   const source=image, size=viewport, pixelRatio=dpr;
    let stale=false, owned: PreviewCache | null=null;
-   cache=null;
-   createPreviewCache(source,size,pixelRatio).then(value => { if(stale) value.dispose(); else {owned=value;cache=value;} }).catch(() => { if(!stale) onerror('Could not process this file. Try a smaller one.'); });
+   cache=null;untrack(() => onloading(true));
+   if(!size) return;
+   createPreviewCache(source,size,pixelRatio).then(value => { if(stale) value.dispose(); else {owned=value;cache=value;} }).catch(() => { if(!stale) {onloading(false);onerror('Could not process this file. Try a smaller one.');} });
    return () => {stale=true;owned?.dispose();};
  });
  $effect(() => {
@@ -74,14 +75,14 @@
    // A pending/failed watermark must never hide the successfully loaded source.
    canvas.width=Math.ceil(source.viewport.width*source.dpr);canvas.height=Math.ceil(source.viewport.height*source.dpr);
    const ctx=canvas.getContext('2d');
-   if(ctx) drawPreview(ctx,source,asset,snapshot);
+   if(ctx) {drawPreview(ctx,source,asset,snapshot);untrack(() => onloading(false));}
  });
  function point(event:PointerEvent):Point {
    const bounds=canvas.getBoundingClientRect();
-   return toImagePoint({x:event.clientX-bounds.left,y:event.clientY-bounds.top},image.size,viewport);
+   return toImagePoint({x:event.clientX-bounds.left,y:event.clientY-bounds.top},image.size,viewport!);
  }
  function start(event:PointerEvent) {
-   if (disabled || mark.mode === 'tiled' || gesture || event.button !== 0 || !selection) return;
+   if (!viewport || disabled || mark.mode === 'tiled' || gesture || event.button !== 0 || !selection) return;
    const p=point(event), center={x:mark.x*image.size.width,y:mark.y*image.size.height};
    const target=event.target as HTMLElement;
    gesture={id:event.pointerId,mode:target.closest('.resize-handle')?'resize':'move',center,
@@ -89,7 +90,7 @@
    frame.setPointerCapture(event.pointerId);event.preventDefault();
  }
  function move(event: PointerEvent) {
-   if(disabled || mark.mode === 'tiled') {cleanup();return;}
+   if(!viewport || disabled || mark.mode === 'tiled') {cleanup();return;}
    const active=gesture;if(!active || active.id!==event.pointerId) return;
    const p=point(event);
    if(active.mode==='resize') onsize(Math.max(.01,Math.min(.20,active.size*Math.hypot(p.x-active.center.x,p.y-active.center.y)/active.distance)));
@@ -100,14 +101,12 @@
    if(gesture?.id===event.pointerId) cleanup();
  }
 </script>
-<div bind:this={frame} class="preview-frame" role="group" aria-label="Watermark preview" onpointermove={move} onpointerup={end} onpointercancel={end} onlostpointercapture={end}>
- <canvas bind:this={canvas} use:measure aria-label="Image preview" data-image-width={image.size.width} data-image-height={image.size.height} class="editor-canvas">Image preview. Use Position and Size controls to adjust the watermark.</canvas>
+<div bind:this={frame} use:measure class="preview-frame" role="group" aria-label="Watermark preview" onpointermove={move} onpointerup={end} onpointercancel={end} onlostpointercapture={end}>
+ <canvas bind:this={canvas} aria-label="Image preview" data-image-width={image.size.width} data-image-height={image.size.height} class="editor-canvas">Image preview. Use Position and Size controls to adjust the watermark.</canvas>
  {#if selection}
  <div class="watermark-selection" class:locked={disabled} aria-hidden="true" onpointerdown={start} style={`left:${selection.x}px;top:${selection.y}px;width:${selection.width}px;height:${selection.height}px;transform:translate(-50%,-50%) rotate(${mark.angle}deg)`}>
   {#each ['nw','ne','sw','se'] as corner (corner)}<span class={`resize-handle ${corner}`} data-corner={corner}></span>{/each}
  </div>
  {/if}
 </div>
-{#if mark.mode !== 'tiled'}
-<p class="text-sm text-muted">Drag the watermark to move it; drag a corner to resize. Or use Position and Size below.</p>
-{/if}
+<p class="text-sm text-muted" class:invisible={mark.mode === 'tiled'} aria-hidden={mark.mode === 'tiled'}>Drag the watermark to move it; drag a corner to resize. Or use Position and Size below.</p>

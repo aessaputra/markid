@@ -1,5 +1,5 @@
 <script lang="ts">
- import { onDestroy } from 'svelte';
+ import { onDestroy, tick } from 'svelte';
  import { ExportController, ImageController } from './lib/editor/controller';
  import { loadSource } from './lib/input/load';
  import PdfPreview from './lib/ui/PdfPreview.svelte';
@@ -18,6 +18,7 @@ let watermarkArea = $state<{ image: Size; watermark: Size | null } | null>(null)
  let loading = $state(false);
  let error = $state('');
  let previewError = $state('');
+ let previewLoading = $state(false);
  import { exportImage } from './lib/image/export';
  import ResultView from './lib/ui/ResultView.svelte';
  let result=$state.raw<ExportResult|null>(null);
@@ -26,8 +27,12 @@ let watermarkArea = $state<{ image: Size; watermark: Size | null } | null>(null)
  const exports=new ExportController(async (source,mark,options)=>{if(source.kind==='image')return exportImage(source,mark,options);const {exportPdf}=await import('./lib/pdf/export');return exportPdf(source,mark);},()=>{result=exports.result;processing=exports.processing;exportError=exports.error;});
  function edit(value:Watermark) {if(processing)return;exports.invalidate();mark=value;previewError='';}
 
+ let focusedChooser: HTMLElement | undefined;
  const controller = new ImageController(loadSource, () => {
-  if(current!==controller.current) {exports.invalidate();mark={...mark,x:.5,y:.5};previewError='';watermarkArea=null;}
+  if(!current && controller.current && focusedChooser===document.activeElement) {
+   void tick().then(() => {if(document.activeElement===document.body) document.querySelector<HTMLButtonElement>('.file-picker button')?.focus({preventScroll:true});});
+  }
+  if(current!==controller.current) {exports.invalidate();mark={...mark,x:.5,y:.5};previewError='';watermarkArea=null;previewLoading=!!controller.current;}
    current=controller.current;fileName=controller.fileName;loading=controller.loading;error=controller.error;
  });
  onDestroy(() => {controller.dispose();exports.dispose();});
@@ -38,20 +43,21 @@ let watermarkArea = $state<{ image: Size; watermark: Size | null } | null>(null)
  <ResultView {result} error={exportError} onback={() => exports.invalidate()} onerror={message => {exportError=message;}} />
  {/if}
  {#snippet picker()}
- <FilePicker initial={!current} {fileName} disabled={processing} onchange={file => {if(processing)return;exports.invalidate();previewError='';void controller.replace(file);}} />
+ <FilePicker initial={!current} {fileName} disabled={processing} onchange={(file, chooser) => {if(processing)return;focusedChooser=chooser;exports.invalidate();previewError='';void controller.replace(file);}} />
  {/snippet}
  <div class="grid gap-4" hidden={!!result}>
  {#if current}{@render picker()}{/if}
  <div class={current ? 'editor-layout' : 'w-full'} class:pdf-layout={current?.kind==='pdf'}>
- <section aria-label={current ? 'Source image' : 'File selection'} class="panel grid gap-4" class:preview-panel={!!current}>
+ <section aria-label={current ? 'Source image' : 'File selection'} class="panel relative grid gap-4" class:preview-panel={!!current}>
  {#if !current}
  <div><h2 class="text-xl font-semibold tracking-tight mb-2">Watermark your file</h2><p class="text-sm text-muted">Add a text watermark to an image or PDF before sharing.</p></div>
  {/if}
  {#if !current}{@render picker()}{/if}
- <StatusMessage status={processing ? 'Processing…' : loading ? 'Loading…' : ''} error={exportError || error || previewError} />
+ {#if current}<div class="preview-status"><StatusMessage status={processing ? 'Processing…' : (loading || previewLoading) ? 'Loading…' : ''} error={exportError || error || previewError} /></div>
+ {:else}<div class="initial-status"><StatusMessage status={loading ? 'Loading…' : ''} error={error} /></div>{/if}
  {#if current}
- {#if current.kind==='pdf'}{#key current}<PdfPreview pdf={current} {mark} disabled={processing} onwatermark={info=>watermarkArea=info} onsize={sizeRatio=>edit({...mark,sizeRatio})} onposition={point=>edit({...mark,...point})} onerror={message=>previewError=message} />{/key}{:else}
- <EditorPreview image={current} {mark} disabled={processing} onwatermark={info=>watermarkArea=info} onsize={sizeRatio=>edit({...mark,sizeRatio})} onposition={point => {if(current?.kind==='image')edit({...mark,x:point.x/current.size.width,y:point.y/current.size.height});}} onerror={message => previewError=message} />
+ {#if current.kind==='pdf'}{#key current}<PdfPreview pdf={current} {mark} disabled={processing} onloading={pending=>previewLoading=pending} onwatermark={info=>watermarkArea=info} onsize={sizeRatio=>edit({...mark,sizeRatio})} onposition={point=>edit({...mark,...point})} onerror={message=>previewError=message} />{/key}{:else}
+ <EditorPreview image={current} {mark} disabled={processing} onloading={pending=>previewLoading=pending} onwatermark={info=>watermarkArea=info} onsize={sizeRatio=>edit({...mark,sizeRatio})} onposition={point => {if(current?.kind==='image')edit({...mark,x:point.x/current.size.width,y:point.y/current.size.height});}} onerror={message => previewError=message} />
  {/if}
  {/if}
  </section>

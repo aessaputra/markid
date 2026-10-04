@@ -74,7 +74,7 @@ for(const [width,height] of [[320,568],[390,844],[844,390],[1280,800]]) for(cons
  await page.getByLabel('Angle',{exact:true}).focus();await page.keyboard.press('ArrowRight');await expect(page.getByLabel('Angle',{exact:true})).toHaveValue('-44');
  expect(await page.getByLabel('Angle',{exact:true}).evaluate(n => getComputedStyle(n).outlineStyle)).toBe('solid');
  const position=await page.locator('.preview-panel').evaluate(n => getComputedStyle(n).position);
- expect(position).toBe(width >=1024 && height>=760 ? 'sticky':'static');
+ expect(position).toBe(width >=1024 && height>=760 ? 'sticky':'relative');
  const allTouch=await page.locator('main *').evaluateAll(nodes => nodes.filter(n => getComputedStyle(n).touchAction==='none').map(n => n.tagName));
  expect(allTouch).toEqual(['DIV','SPAN','SPAN','SPAN','SPAN']);
  });
