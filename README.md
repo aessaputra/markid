@@ -1,5 +1,3 @@
-<img src="public/favicon.svg" width="40" height="40" alt="MarkID icon" />
-
 # MarkID
 
 Add a text watermark to an image or PDF before sharing. Files, filenames, and watermark text are processed in your browser, without uploads or automatic file storage.
@@ -7,7 +5,7 @@ Add a text watermark to an image or PDF before sharing. Files, filenames, and wa
 Built with Svelte 5, TypeScript, Vite, and Canvas. PDF preview uses PDF.js; PDF export uses pdf-lib.
 
 > [!IMPORTANT]
-> MarkID is experimental and has not been deployed. Physical-device, cross-browser, and embedded HEIC decoder LGPL distribution checks remain incomplete. See the [third-party summary](#third-party).
+> MarkID is live at [markid.aes.my.id](https://markid.aes.my.id). Physical-device, cross-browser, and embedded HEIC decoder LGPL distribution checks remain incomplete. See the [third-party summary](#third-party).
 
 ## Features
 
@@ -52,6 +50,23 @@ npx playwright test -c playwright.csp.config.ts --project=chromium --workers=2
 ```
 
 These tests cover headers, caching, worker/fallback exports, privacy, and accessibility. They do not verify a deployed site. Firefox/WebKit projects are configured, but successful execution is still required before claiming support.
+
+## Deployment
+
+MarkID is deployed as an asset-only [Cloudflare Worker with Static Assets](https://developers.cloudflare.com/workers/static-assets/) at [markid.aes.my.id](https://markid.aes.my.id). No Worker script, bindings, or framework adapter: `wrangler.jsonc` serves `./dist` with single-page-application fallback.
+
+### Automatic deploys
+
+Pushes to `main` build and deploy automatically via [Workers Builds](https://developers.cloudflare.com/workers/ci-cd/builds/):
+
+| Setting | Value |
+|---|---|
+| Build command | `npm run build` |
+| Deploy command | `npx wrangler deploy` |
+| Output directory | `dist` |
+| `NODE_VERSION` | `24` |
+
+Pushes to other branches produce preview URLs. `public/_headers` ships CSP, `nosniff`, HTML `no-cache`, and immutable `/assets/*` caching with the build.
 
 ## Usage
 

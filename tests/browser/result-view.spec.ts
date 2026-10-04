@@ -20,7 +20,7 @@ test('result mounts only for output, gates download on decode and releases its U
  await expect(region.getByRole('button',{name:'Download',exact:true})).toBeEnabled();
  const url=await region.getByRole('img').getAttribute('src');
  const download=page.waitForEvent('download');await region.getByRole('button',{name:'Download',exact:true}).click();
- expect((await download).suggestedFilename()).toBe('markid.jpg');
+ expect((await download).suggestedFilename()).toMatch(/^markid-\d{8}-\d{6}\.jpg$/);
  const revoked=await page.evaluate(async()=>{
   const state=window as typeof window & {removeResult:()=>Promise<void>;revokedResultUrls:string[]};
   await state.removeResult();return state.revokedResultUrls;

@@ -13,7 +13,9 @@
  });
  function download() {
   if(!decoded || !url) return;
-  const a=document.createElement('a');a.href=url;a.download=result.kind==='pdf'?'markid.pdf':'markid.jpg';a.click();
+  const d=new Date(),p=(n:number)=>String(n).padStart(2,'0');
+  const stamp=`${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;
+  const a=document.createElement('a');a.href=url;a.download=`markid-${stamp}.${result.kind==='pdf'?'pdf':'jpg'}`;a.click();
  }
 </script>
 <section aria-label="Result preview" class="panel grid gap-4">

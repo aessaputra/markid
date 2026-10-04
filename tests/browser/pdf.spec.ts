@@ -34,7 +34,7 @@ test('exports real PDF and navigates final pages',async({page})=>{
  await page.getByRole('button',{name:'Preview',exact:true}).click();
  await expect(page.getByRole('button',{name:'Download',exact:true})).toBeEnabled();
  const pending=page.waitForEvent('download');await page.getByRole('button',{name:'Download',exact:true}).click();
- expect((await pending).suggestedFilename()).toBe('markid.pdf');
+ expect((await pending).suggestedFilename()).toMatch(/^markid-\d{8}-\d{6}\.pdf$/);
  await expect(page.getByLabel('Final PDF preview')).toBeVisible();
  await page.getByRole('button',{name:'Back to edit'}).click();
  await expect(page.getByLabel('Watermark text')).toHaveValue('For verification only\nSecond line');
