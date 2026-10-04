@@ -1,3 +1,6 @@
+import type {LoadedPdf,Watermark} from '../../src/lib/editor/types';
+import type {ExportRequest,ExportResponse} from '../../src/lib/image/export.worker';
+type GapWindow=Window & {gapReplies:Array<{blob:Blob;mark:Watermark}>};
 import { expect, test, type Page } from '@playwright/test';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -5,12 +8,12 @@ import { join } from 'node:path';
 function precisePreview(page: Page) {
   return page.getByLabel('Image preview').evaluate(async node => {
     const {loadSource}=await import(String('/src/lib/input/load.ts'));
-    const {renderWatermark}=await import(String('/src/lib/editor/watermark.ts'));
+    const {renderWatermark}=await import(String('/src/lib/editor/watermark.ts')) as typeof import('../../src/lib/editor/watermark');
     const {createPreviewCache,drawPreview}=await import(String('/src/lib/editor/preview.ts'));
     const source=await loadSource(new File([await (await fetch('/tests/fixtures/images/exif-6.png')).arrayBuffer()],'x.png'));
     const canvas=node as HTMLCanvasElement;
     const viewport={width:canvas.getBoundingClientRect().width,height:canvas.getBoundingClientRect().height};
-    const mark={text:(document.querySelector('#text') as HTMLTextAreaElement).value,mode:'tiled',sizeRatio:.05,x:.5,y:.5,angle:-45,opacity:.3,color:'#888888',gapX:37,gapY:123};
+    const mark={text:(document.querySelector('#text') as HTMLTextAreaElement).value,mode:'tiled' as const,sizeRatio:.05,x:.5,y:.5,angle:-45,opacity:.3,color:'#888888',gapX:37,gapY:123};
     const bitmap=await renderWatermark(mark,source.size);
     const cache=await createPreviewCache(source,viewport,devicePixelRatio);
     const expected=document.createElement('canvas');expected.width=canvas.width;expected.height=canvas.height;
@@ -171,13 +174,13 @@ for (const width of [320, 390, 1280]) test(`Watermark layout fills the form abov
 for(const angle of [0,45,-45,90]) test(`actual tiled Canvas pixels and image export oracle ${angle}`,async({page})=>{
   await page.goto('/');
   const results=await page.evaluate(async angle=>{
-    const {renderWatermark,composeWatermark}=await import(String('/src/lib/editor/watermark.ts'));
+    const {renderWatermark,composeWatermark}=await import(String('/src/lib/editor/watermark.ts')) as typeof import('../../src/lib/editor/watermark');
     const {exportImage}=await import(String('/src/lib/image/export.ts'));
     const {createPreviewCache,drawPreview}=await import(String('/src/lib/editor/preview.ts'));
     const out=[];
     for(const text of ['I','A long verification watermark','Ágj\nSecond line']) for(const [gapX,gapY] of [[0,0],[25,75],[37,123],[200,200]]){
       const area={width:400,height:400};const source=document.createElement('canvas');source.width=400;source.height=400;source.getContext('2d')!.fillStyle='#fff';source.getContext('2d')!.fillRect(0,0,400,400);
-      const mark={text,mode:'tiled',sizeRatio:.05,x:.17,y:.83,angle,opacity:.7,color:'#ff0000',gapX,gapY};
+      const mark={text,mode:'tiled' as const,sizeRatio:.05,x:.17,y:.83,angle,opacity:.7,color:'#ff0000',gapX,gapY};
       const bitmap=await renderWatermark(mark,area);
       const actual=document.createElement('canvas');actual.width=400;actual.height=400;const a=actual.getContext('2d')!;a.drawImage(source,0,0);composeWatermark(a,bitmap,mark,area);
       // Independent finite oracle: centered rectangular grid; no production centers helper.
@@ -200,7 +203,7 @@ for(const angle of [0,45,-45,90]) test(`actual tiled Canvas pixels and image exp
       const preview=a.getImageData(0,0,400,400).data;let previewMax=0;for(let i=0;i<preview.length;i++)previewMax=Math.max(previewMax,Math.abs(preview[i]-ep[i]));
       let reply:Blob|undefined,htmlEncodes=0;
       const post=Worker.prototype.postMessage,nativeEncode=HTMLCanvasElement.prototype.toBlob;
-      Worker.prototype.postMessage=function(message,...args){this.addEventListener('message',({data})=>{if(data.id===message.id && data.revision===message.revision && data.blob)reply=data.blob;});return Reflect.apply(post,this,[message,...args]);};
+      Worker.prototype.postMessage=function(message:ExportRequest,...args:[(Transferable[] | StructuredSerializeOptions)?]){this.addEventListener('message',({data}:MessageEvent<ExportResponse>)=>{if(data.id===message.id && data.revision===message.revision && 'blob' in data)reply=data.blob;});return Reflect.apply(post,this,[message,...args]);};
       HTMLCanvasElement.prototype.toBlob=function(...args){htmlEncodes++;return nativeEncode.apply(this,args);};
       let saved;try{saved=await exportImage(image,mark);}finally{Worker.prototype.postMessage=post;HTMLCanvasElement.prototype.toBlob=nativeEncode;}
       const savedBytes=new Uint8Array(await saved.blob.arrayBuffer());
@@ -222,17 +225,17 @@ test('Tiled PDF rotated/cropped export raster matches preview at different resol
   test.setTimeout(180_000);
   await page.goto('/');
   const results=await page.evaluate(async()=>{
-    const {loadPdf,states}=await import(String('/src/lib/pdf/load.ts'));const {previewPdf}=await import(String('/src/lib/pdf/preview.ts'));const {exportPdf}=await import(String('/src/lib/pdf/export.ts'));const {renderWatermark}=await import(String('/src/lib/editor/watermark.ts'));
+    const {loadPdf,states}=await import(String('/src/lib/pdf/load.ts')) as typeof import('../../src/lib/pdf/load');const {previewPdf}=await import(String('/src/lib/pdf/preview.ts')) as typeof import('../../src/lib/pdf/preview');const {exportPdf}=await import(String('/src/lib/pdf/export.ts')) as typeof import('../../src/lib/pdf/export');const {renderWatermark}=await import(String('/src/lib/editor/watermark.ts')) as typeof import('../../src/lib/editor/watermark');
     const pdf=await loadPdf(new File([await (await fetch('/tests/fixtures/pdf/rotated-crop.pdf')).arrayBuffer()],'x.pdf'));
     const out=[];
     for(const angle of [0,45,-45,90]) for(const text of ['I','A long verification watermark','Ágj\nVerification']) for(const [gapX,gapY] of [[0,0],[25,75],[37,123],[200,200]]){
-      const mark={text,mode:'tiled',sizeRatio:.05,x:.1,y:.9,angle,opacity:.7,color:'#ff0000',gapX,gapY};
+      const mark={text,mode:'tiled' as const,sizeRatio:.05,x:.1,y:.9,angle,opacity:.7,color:'#ff0000',gapX,gapY};
       const saved=await exportPdf(pdf,mark);
       // At zero gap the narrow I asset is reduced below 50% at 420px: PDF.js
       // prescales and snaps image edges, while Canvas samples fractional edges.
       // Compare above that resampling boundary; retain the original default-gap raster too.
       for(const display of (gapX===25 && gapY===75 ? [420,840] : [840])) for(let index=0;index<pdf.pageCount;index++){
-        const source=await previewPdf(pdf,index,{width:display,height:display*4/3}),actual=await previewPdf(saved.pdf,index,{width:display,height:display*4/3});
+        const source=await previewPdf(pdf,index,{width:display,height:display*4/3}),actual=await previewPdf(saved.pdf!,index,{width:display,height:display*4/3});
         const c=document.createElement('canvas');c.width=Math.ceil(source.size.width);c.height=Math.ceil(source.size.height);const ctx=c.getContext('2d')!;ctx.drawImage(source.source,0,0);
         const bitmap=await renderWatermark(mark,source.size);
         const scale=Math.min(source.size.width,source.size.height)/1600,w=bitmap.width*scale,h=bitmap.height*scale;
@@ -254,26 +257,26 @@ test('Tiled PDF rotated/cropped export raster matches preview at different resol
         ctx.globalAlpha=1;bitmap.close();const expected=ctx.getImageData(0,0,c.width,c.height).data;
         ctx.clearRect(0,0,c.width,c.height);ctx.drawImage(actual.source,0,0);const pixels=ctx.getImageData(0,0,c.width,c.height).data;
         let error=0,ink=0,overlap=0;for(let i=0;i<pixels.length;i+=4){error+=Math.abs(pixels[i+1]-expected[i+1]);if(expected[i]>expected[i+1]+30){ink++;if(pixels[i]>pixels[i+1]+20)overlap++;}}
-        const textContent=async(p:any)=>{const page=await states.get(p)!.doc.getPage(index+1);return (await page.getTextContent()).items.map((v:any)=>v.str).join('');};
-        out.push({angle,text,gapX,gapY,display,index,raster:angle===0 && text==='I' && gapX===0 && index===0?c.toDataURL():undefined,error:error/(pixels.length/4),overlap:overlap/ink,ink,pageCount:saved.pdf.pageCount,originalCount:pdf.pageCount,textSame:await textContent(pdf)===await textContent(saved.pdf)});source.dispose();actual.dispose();
+        const textContent=async(p:LoadedPdf)=>{const page=await states.get(p)!.doc.getPage(index+1);return (await page.getTextContent()).items.map(v=>'str' in v?v.str:'').join('');};
+        out.push({angle,text,gapX,gapY,display,index,raster:angle===0 && text==='I' && gapX===0 && index===0?c.toDataURL():undefined,error:error/(pixels.length/4),overlap:overlap/ink,ink,pageCount:saved.pdf!.pageCount,originalCount:pdf.pageCount,textSame:await textContent(pdf)===await textContent(saved.pdf!)});source.dispose();actual.dispose();
       }saved.dispose();
     }pdf.dispose();return out;
   });
   const raster=results.find(r=>r.raster)?.raster;
   if(raster){const {writeFile}=await import('node:fs/promises');await writeFile(join(tmpdir(),'markid-task-3-zero-gap-pdf.png'),Buffer.from(raster.split(',')[1],'base64'));}
-  console.log('PDF gap metrics',JSON.stringify(results.map(({raster,...metric})=>metric)));
+  console.log('PDF gap metrics',JSON.stringify(results.map(metric=>({...metric,raster:undefined}))));
   console.log('PDF tiled raster summary',JSON.stringify({cases:results.length,maxMeanError:Math.max(...results.map(r=>r.error)),minInkOverlap:Math.min(...results.map(r=>r.overlap))}));
   // Unchanged tolerances; the higher-resolution oracle avoids PDF.js prescale/snap
   // differences proved in pdf-gap-diagnostic-report.md, not a relaxed error budget.
-  for(const {raster,...r} of results){expect(r.pageCount).toBe(r.originalCount);expect(r.textSame).toBe(true);expect(r.ink).toBeGreaterThan(100);expect(r.error,JSON.stringify(r)).toBeLessThan(7);expect(r.overlap,JSON.stringify(r)).toBeGreaterThan(.85);}
+  for(const r of results){expect(r.pageCount).toBe(r.originalCount);expect(r.textSame).toBe(true);expect(r.ink).toBeGreaterThan(100);expect(r.error,JSON.stringify(r)).toBeLessThan(7);expect(r.overlap,JSON.stringify(r)).toBeGreaterThan(.85);}
 });
 
 test('custom gaps survive real downloads, fresh regeneration, source replacement and processing lock',async({page})=>{
   await page.addInitScript(()=>{
     const post=Worker.prototype.postMessage;
-    (window as any).gapReplies=[];
-    Worker.prototype.postMessage=function(message,...args){
-      if(message?.mark) this.addEventListener('message',({data})=>{if(data.id===message.id && data.revision===message.revision && data.blob)(window as any).gapReplies.push({blob:data.blob,mark:message.mark});});
+    (window as unknown as GapWindow).gapReplies=[];
+    Worker.prototype.postMessage=function(message:ExportRequest,...args:[(Transferable[] | StructuredSerializeOptions)?]){
+      if(message?.mark) this.addEventListener('message',({data}:MessageEvent<ExportResponse>)=>{if(data.id===message.id && data.revision===message.revision && 'blob' in data)(window as unknown as GapWindow).gapReplies.push({blob:data.blob,mark:message.mark});});
       return Reflect.apply(post,this,[message,...args]);
     };
   });
@@ -292,7 +295,7 @@ test('custom gaps survive real downloads, fresh regeneration, source replacement
     const button=page.getByRole('button',{name:'Download',exact:true});await expect(button).toBeEnabled();
     const pending=page.waitForEvent('download');await button.click();const file=await pending;
     const {readFile}=await import('node:fs/promises');const bytes=await readFile((await file.path())!);
-    const reply=await page.evaluate(async()=>{const r=(window as any).gapReplies.at(-1);return {bytes:Array.from(new Uint8Array(await r.blob.arrayBuffer())),mark:r.mark,count:(window as any).gapReplies.length};});
+    const reply=await page.evaluate(async()=>{const r=(window as unknown as GapWindow).gapReplies.at(-1)!;return {bytes:Array.from(new Uint8Array(await r.blob.arrayBuffer())),mark:r.mark,count:(window as unknown as GapWindow).gapReplies.length};});
     expect(Array.from(bytes)).toEqual(reply.bytes);
     await page.getByRole('button',{name:'Back to edit',exact:true}).click();
     return {bytes,reply};

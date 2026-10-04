@@ -22,8 +22,7 @@ for (const fallback of [false,true]) {
         const sourceSize={width:source.width,height:source.height};
         loaded.dispose(); loaded.dispose(); return {size,corners,sourceKind,sourceSize};
       },{bytes,fallback});
-      const scale=1;
-      expect(result.size).toEqual(orientation>=5 ? {width:80*scale,height:120*scale}:{width:120*scale,height:80*scale});
+      expect(result.size).toEqual(orientation>=5 ? {width:80,height:120}:{width:120,height:80});
       const expected=[['R','G','B','Y'],['G','R','Y','B'],['Y','B','G','R'],['B','Y','R','G'],['R','B','G','Y'],['B','R','Y','G'],['Y','G','B','R'],['G','Y','R','B']];
       expect(result.corners).toEqual(expected[orientation-1]);
       expect(result.sourceKind).toBe(fallback ? 'canvas':'bitmap');
@@ -51,7 +50,7 @@ test('bitmap rejection falls back; URL cleanup and PNG alpha survive', async ({p
     let created=0,revoked=0;
     URL.createObjectURL=blob=>{created++;return original(blob);};
     URL.revokeObjectURL=url=>{revoked++;revoke(url);};
-    window.createImageBitmap=async()=>{throw new Error('forced unsupported options');};
+    window.createImageBitmap=()=>Promise.reject(new Error('forced unsupported options'));
     const {loadImage}=await import(String('/src/lib/image/load.ts')) as typeof import('../../src/lib/image/load');
     const image=await loadImage(new File([new Uint8Array(bytes)],'alpha.png'));
     const c=image.source as HTMLCanvasElement;const alpha=c.getContext('2d')!.getImageData(0,0,1,1).data[3];

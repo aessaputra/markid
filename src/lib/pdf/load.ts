@@ -15,7 +15,7 @@ export async function openPdf(bytes:Uint8Array):Promise<LoadedPdf>{
   for(const [,object] of doc.context.enumerateIndirectObjects()){
    if(object instanceof lib.PDFDict && (object.get(lib.PDFName.of('Type'))===lib.PDFName.of('Sig') || object.get(lib.PDFName.of('FT'))===lib.PDFName.of('Sig') || object.has(lib.PDFName.of('ByteRange')))) throw new Error(SIGNED);
   }
- }catch(error){if(error instanceof lib.EncryptedPDFError || (error instanceof Error && /encrypted/i.test(error.message)))throw new Error(LOCKED);if(error instanceof Error && error.message===SIGNED)throw error;throw new Error(BROKEN,{cause:error});}
+ }catch(error){if(error instanceof lib.EncryptedPDFError || (error instanceof Error && /encrypted/i.test(error.message)))throw new Error(LOCKED,{cause:error});if(error instanceof Error && error.message===SIGNED)throw error;throw new Error(BROKEN,{cause:error});}
  try {
  const js=await import('pdfjs-dist/legacy/build/pdf.mjs');
  const {default:worker}=await import('pdfjs-dist/legacy/build/pdf.worker.min.mjs?url');

@@ -7,7 +7,7 @@ function pending(){let resolve!:(r:ExportResult)=>void;let reject!:(e:Error)=>vo
 const result=():ExportResult=>({kind:'image',blob:new Blob(['x']),dispose:vi.fn()});
 for(const outcome of ['resolve','reject'] as const) test(`invalidation retains single in-flight lock until stale ${outcome} settles`,async()=>{
  const a=pending(),b=pending(),queue=[a,b];let active=0,maxActive=0;
- const codec=vi.fn(async(_image:LoadedSource,_mark:typeof mark)=>{
+ const codec=vi.fn<(image:LoadedSource,mark:Watermark)=>Promise<ExportResult>>(async()=>{
   active++;maxActive=Math.max(maxActive,active);
   try{return await queue.shift()!.promise;}finally{active--;}
  });

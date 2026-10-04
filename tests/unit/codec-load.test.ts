@@ -7,7 +7,7 @@ import {heicTo} from 'heic-to/csp';
 const file=(n:string)=>new File([readFileSync(`tests/fixtures/codecs/${n}`)],n);
 const bitmap=(w=320,h=240)=>({width:w,height:h,close:vi.fn()}) as unknown as ImageBitmap;
 afterEach(()=>{vi.unstubAllGlobals();vi.clearAllMocks();});
-test('HEIF native failure invokes fallback once; normalized output disposes once',async()=>{const b=bitmap();vi.stubGlobal('createImageBitmap',vi.fn().mockRejectedValue(new Error('native')));vi.mocked(heicTo).mockImplementation(async()=>b as never);const result=await loadImage(file('encoded.heic'));expect(heicTo).toHaveBeenCalledTimes(1);result.dispose();result.dispose();expect(b.close).toHaveBeenCalledTimes(1);});
+test('HEIF native failure invokes fallback once; normalized output disposes once',async()=>{const b=bitmap();vi.stubGlobal('createImageBitmap',vi.fn().mockRejectedValue(new Error('native')));vi.mocked(heicTo).mockImplementation(()=>Promise.resolve(b as never));const result=await loadImage(file('encoded.heic'));expect(heicTo).toHaveBeenCalledTimes(1);result.dispose();result.dispose();expect(b.close).toHaveBeenCalledTimes(1);});
 test('native success does not load HEVC fallback',async()=>{vi.stubGlobal('createImageBitmap',vi.fn().mockResolvedValue(bitmap()));await loadImage(file('encoded.heic'));expect(heicTo).not.toHaveBeenCalled();});
 test('AVIF failure never invokes HEVC',async()=>{vi.stubGlobal('createImageBitmap',vi.fn().mockRejectedValue(new Error('native')));await expect(loadImage(file('still.avif'))).rejects.toThrow();expect(heicTo).not.toHaveBeenCalled();});
 test('modern HTML fallback sizes from real display and does not retry bitmap',async()=>{

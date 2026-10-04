@@ -4,7 +4,8 @@ for (const state of ['initial', 'Reset']) test(`${state} watermark defaults keep
   await page.goto('/');
   await page.locator('input[type=file]').setInputFiles(portrait);
   if (state === 'Reset') {
-    await page.getByLabel('Watermark text').fill('Changed');
+    await page.getByLabel('Watermark text').fill('For verification only\n2026-10-02');
+    await expect(page.getByRole('button',{name:'Preview',exact:true})).toBeEnabled();
     for (const [name, value] of [['Size','12'],['Opacity','80'],['Angle','45']]) {
       await page.getByLabel(name,{exact:true}).fill(value);
       await page.getByLabel(name,{exact:true}).press('Enter');
@@ -18,7 +19,7 @@ for (const state of ['initial', 'Reset']) test(`${state} watermark defaults keep
     }
     await page.getByRole('button',{name:'Reset',exact:true}).click();
   }
-  const stamp = await page.evaluate(() => new Date().toLocaleDateString('en-CA'));
+  const stamp = await page.evaluate(() => {const today=new Date();return `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;});
   await expect(page.getByLabel('Watermark text')).toHaveValue(`For verification only, ${stamp}`);
   await expect(page.getByLabel('Size',{exact:true})).toHaveValue('5');
   await expect(page.getByLabel('Opacity',{exact:true})).toHaveValue('30');
@@ -26,34 +27,14 @@ for (const state of ['initial', 'Reset']) test(`${state} watermark defaults keep
   await expect(page.getByLabel('Angle',{exact:true})).toHaveValue('-45');
   await expect(page.getByRole('button',{name:'Single',exact:true})).toHaveAttribute('aria-pressed','true');
   await expect(page.getByRole('button',{name:'Center',exact:true})).toHaveAttribute('aria-pressed','true');
+  await expect(page.getByLabel('Font',{exact:true})).toHaveCount(0);
+  await expect(page.getByLabel('Image preview')).toHaveAttribute('data-image-width','80');
+  await expect(page.getByLabel('Image preview')).toHaveAttribute('data-image-height','120');
+  await expect(page.getByRole('button',{name:'Preview',exact:true})).toBeEnabled();
   await page.getByRole('button',{name:'Tiled',exact:true}).click();
   await expect(page.getByRole('spinbutton',{name:'Horizontal gap value',exact:true})).toHaveValue('25');
   await expect(page.getByRole('spinbutton',{name:'Vertical gap value',exact:true})).toHaveValue('75');
 });
-test('editing and reset restores settings without deleting source', async ({page}) => {
-  await page.goto('/');
-  await page.locator('input[type=file]').setInputFiles(portrait);
-  await page.getByLabel('Watermark text').fill('For verification only\n2026-10-02');
-  await expect(page.getByRole('button', {name:'Preview',exact:true})).toBeEnabled();
-  await page.getByLabel('Size', {exact:true}).fill('12');await page.getByLabel('Size', {exact:true}).press('Enter');
-  await page.getByLabel('Opacity', {exact:true}).fill('80');
-  await page.getByLabel('Color', {exact:true}).fill('#008844');
-  await page.getByRole('button', {name:'Top left',exact:true}).click();
-  await page.getByLabel('Angle', {exact:true}).fill('45');
-  await page.getByRole('button', {name:'Reset',exact:true}).click();
-  const today = new Date(); const stamp = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-  await expect(page.getByLabel('Watermark text')).toHaveValue(`For verification only, ${stamp}`);
-  await expect(page.getByLabel('Size', {exact:true})).toHaveValue('5');
-  await expect(page.getByLabel('Opacity', {exact:true})).toHaveValue('30');
-  await expect(page.getByLabel('Color', {exact:true})).toHaveValue('#888888');
-  await expect(page.getByLabel('Font', {exact:true})).toHaveCount(0);
-  await expect(page.getByRole('button',{name:'Center',exact:true})).toHaveAttribute('aria-pressed','true');
-  await expect(page.getByLabel('Angle', {exact:true})).toHaveValue('-45');
-  await expect(page.getByLabel('Image preview')).toHaveAttribute('data-image-width','80');
-  await expect(page.getByLabel('Image preview')).toHaveAttribute('data-image-height','120');
-  await expect(page.getByRole('button',{name:'Preview',exact:true})).toBeEnabled();
-});
-
 test('replacement and failed preparation preserve direct text edits', async ({page}) => {
  await page.goto('/'); await page.locator('input[type=file]').setInputFiles(portrait);
  await page.getByLabel('Watermark text').fill('For account check only · 2026-10-02');
@@ -155,7 +136,7 @@ test('failed preview cache creation clears its temporary canvas',async ({page}) 
  const source=document.createElement('canvas');source.width=80;source.height=120;
  const original=document.createElement.bind(document);let temp:HTMLCanvasElement | null=null;
  document.createElement=((tag:string,...args:unknown[]) => {const node=original(tag,...args as []);if(tag==='canvas') temp=node as HTMLCanvasElement;return node;}) as typeof document.createElement;
- window.createImageBitmap=async()=>{throw new Error('forced cache failure');};
+ window.createImageBitmap=()=>Promise.reject(new Error('forced cache failure'));
  let failed=false;try {await createPreviewCache({kind:'image',source,size:{width:80,height:120},dispose(){}},{width:320,height:200});}catch {failed=true;}
  return {failed,width:temp!.width,height:temp!.height};
  });

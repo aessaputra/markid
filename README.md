@@ -20,7 +20,7 @@ No fixed input byte, photo megapixel/side, or JPEG output byte limit. Photos ret
 
 PDF raster previews adapt to the actual displayed page fit at twice its CSS dimensions, without the former 2MP/1600px/scale-2 caps. This preview sampling does not rasterize original PDF page content on export; the separate watermark asset layout remains unchanged. Full-resolution processing is not an unlimited-capacity, mobile-memory or readability guarantee. Inspect the final result before using it; synthetic small-text evidence does not establish a universal readable minimum.
 
-Files, names and watermark text are processed locally; no uploads, analytics, accounts, backend or automatic file persistence. Only an explicit theme preference is saved. Lazy decoder/PDF assets are fetched from the application's own origin. Downloads happen only when requested. This is not an offline/PWA guarantee: initial and lazy assets need a server. Browsers/OS may retain memory, caches or downloaded files; instant physical erasure is not promised. Hosting can log ordinary access metadata. Watermarks are not redaction, encryption or tamper-proof protection.
+Files, names and watermark text are processed locally; no uploads, analytics, accounts, backend or automatic file persistence. Theme follows the system dynamically; no theme preference is saved. Lazy decoder/PDF assets are fetched from the application's own origin. Downloads happen only when requested. This is not an offline/PWA guarantee: initial and lazy assets need a server. Browsers/OS may retain memory, caches or downloaded files; instant physical erasure is not promised. Hosting can log ordinary access metadata. Watermarks are not redaction, encryption or tamper-proof protection.
 
 **PDF warning:** Canvas preview does not execute document JavaScript/URI actions or provide interactive forms, but export is **not a sanitizer**. Original active content, links/actions, attachments and other structures may survive and may execute in another reader. Do not treat a watermarked untrusted PDF as safe.
 
@@ -32,6 +32,7 @@ Use Node **24** (verified 24.21.0; package also permits 26 but this report does 
 npm install --include=dev
 npm run dev
 npm run check
+npm run lint
 npm run test:unit
 npx playwright install chromium
 npm run test:browser -- --workers=2
