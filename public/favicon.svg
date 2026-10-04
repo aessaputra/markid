@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="112" fill="#047857"/>
+  <g opacity="0.30">
+    <text x="256" y="148" font-family="system-ui, sans-serif" font-size="58" font-weight="700" letter-spacing="6" fill="#ffffff" text-anchor="middle" transform="rotate(-12 256 148)">MARKID</text>
+  </g>
+  <text x="256" y="368" font-family="system-ui, sans-serif" font-size="300" font-weight="800" fill="#ffffff" text-anchor="middle">M</text>
+</svg>
