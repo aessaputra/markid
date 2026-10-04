@@ -1,5 +1,6 @@
 import type { LoadedImage, Size } from '../editor/types';
 import { validateSize } from '../input/headers';
+import { normalizeBitmap } from './heic';
 const failure = () => new Error('Could not open this file. Try a JPG or PNG.');
 /** Decoder applies EXIF. Never apply a second orientation transform. */
 export async function decodeNative(blob: Blob, displaySize: Size): Promise<LoadedImage> {
@@ -9,9 +10,7 @@ export async function decodeNative(blob: Blob, displaySize: Size): Promise<Loade
       bitmap = await createImageBitmap(blob, {imageOrientation:'from-image'});
       validateSize({width:bitmap.width,height:bitmap.height});
       if (bitmap.width !== displaySize.width || bitmap.height !== displaySize.height) throw failure();
-      const source = bitmap;
-      let disposed = false;
-      return {kind:'image',size:displaySize,source,dispose(){if (!disposed) {disposed=true;source.close();}}};
+      return normalizeBitmap(bitmap);
     } catch { bitmap?.close(); /* Native HTML decoder fallback below. */ }
   }
   return decodeNativeHtml(blob, displaySize);

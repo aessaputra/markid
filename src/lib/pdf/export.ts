@@ -22,14 +22,11 @@ export async function exportPdf(pdf:LoadedPdf,mark:Watermark):Promise<ExportResu
    const [x,y,right,top]=reader.view;const rotation=reader.rotate;reader.cleanup();
    const box={x,y,width:right-x,height:top-y},size=displaySize(box,rotation);
    const scale=Math.min(size.width,size.height)/1600,width=bitmap.width*scale,height=bitmap.height*scale;
-   if(snapshot.mode==='tiled'){
-    const centers=tiledCenters({width:size.width,height:size.height},{width,height},snapshot.angle,snapshot.gapX,snapshot.gapY);
-    for(const c of centers){
-     const p=imagePlacement(box,rotation,{x:c.x/size.width,y:c.y/size.height,angle:snapshot.angle},width,height);
-     page.drawImage(asset,{x:p.x,y:p.y,width,height,rotate:degrees(p.angle),opacity:snapshot.opacity});
-    }
-   }else{
-    const p=imagePlacement(box,rotation,snapshot,width,height);
+   const anchors=snapshot.mode==='tiled'
+    ? tiledCenters(size,{width,height},snapshot.angle,snapshot.gapX,snapshot.gapY).map(c=>({x:c.x/size.width,y:c.y/size.height}))
+    : [snapshot];
+   for(const anchor of anchors){
+    const p=imagePlacement(box,rotation,{...anchor,angle:snapshot.angle},width,height);
     page.drawImage(asset,{x:p.x,y:p.y,width,height,rotate:degrees(p.angle),opacity:snapshot.opacity});
    }
   }

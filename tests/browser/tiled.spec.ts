@@ -2,8 +2,6 @@ import type {LoadedPdf,Watermark} from '../../src/lib/editor/types';
 import type {ExportRequest,ExportResponse} from '../../src/lib/image/export.worker';
 type GapWindow=Window & {gapReplies:Array<{blob:Blob;mark:Watermark}>};
 import { expect, test, type Page } from '@playwright/test';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
 
 function precisePreview(page: Page) {
   return page.getByLabel('Image preview').evaluate(async node => {
@@ -147,6 +145,7 @@ for (const width of [320, 390, 1280]) test(`Watermark layout fills the form abov
     expect(s!.height).toBeCloseTo(t!.height, 1);
     expect(s!.height).toBeGreaterThanOrEqual(44);
     if (mode === 'tiled') {
+      for(const [name,value] of [['Horizontal gap value','37'],['Vertical gap value','123']]){const n=page.getByRole('spinbutton',{name,exact:true});await n.fill(value);await n.press('Enter');await expect(n).toHaveValue(value);}
       const gaps = page.locator('#gap-x, #gap-y');
       const [x,y] = await Promise.all([gaps.nth(0).boundingBox(),gaps.nth(1).boundingBox()]);
       const angle = await page.getByRole('slider',{name:'Angle',exact:true}).boundingBox();
@@ -259,13 +258,11 @@ test('Tiled PDF rotated/cropped export raster matches preview at different resol
         ctx.clearRect(0,0,c.width,c.height);ctx.drawImage(actual.source,0,0);const pixels=ctx.getImageData(0,0,c.width,c.height).data;
         let error=0,ink=0,overlap=0;for(let i=0;i<pixels.length;i+=4){error+=Math.abs(pixels[i+1]-expected[i+1]);if(expected[i]>expected[i+1]+30){ink++;if(pixels[i]>pixels[i+1]+20)overlap++;}}
         const textContent=async(p:LoadedPdf)=>{const page=await states.get(p)!.doc.getPage(index+1);return (await page.getTextContent()).items.map(v=>'str' in v?v.str:'').join('');};
-        out.push({angle,text,gapX,gapY,display,index,raster:angle===0 && text==='I' && gapX===0 && index===0?c.toDataURL():undefined,error:error/(pixels.length/4),overlap:overlap/ink,ink,pageCount:saved.pdf!.pageCount,originalCount:pdf.pageCount,textSame:await textContent(pdf)===await textContent(saved.pdf!)});source.dispose();actual.dispose();
+        out.push({angle,text,gapX,gapY,display,index,error:error/(pixels.length/4),overlap:overlap/ink,ink,pageCount:saved.pdf!.pageCount,originalCount:pdf.pageCount,textSame:await textContent(pdf)===await textContent(saved.pdf!)});source.dispose();actual.dispose();
       }saved.dispose();
     }pdf.dispose();return out;
   });
-  const raster=results.find(r=>r.raster)?.raster;
-  if(raster){const {writeFile}=await import('node:fs/promises');await writeFile(join(tmpdir(),'markid-task-3-zero-gap-pdf.png'),Buffer.from(raster.split(',')[1],'base64'));}
-  console.log('PDF gap metrics',JSON.stringify(results.map(metric=>({...metric,raster:undefined}))));
+  console.log('PDF gap metrics',JSON.stringify(results));
   console.log('PDF tiled raster summary',JSON.stringify({cases:results.length,maxMeanError:Math.max(...results.map(r=>r.error)),minInkOverlap:Math.min(...results.map(r=>r.overlap))}));
   // Unchanged tolerances; the higher-resolution oracle avoids PDF.js prescale/snap
   // differences proved in pdf-gap-diagnostic-report.md, not a relaxed error budget.
@@ -308,13 +305,4 @@ test('custom gaps survive real downloads, fresh regeneration, source replacement
   await page.locator('input[type=file]').setInputFiles('tests/fixtures/images/exif-1.jpg');
   await expect(page.getByText('exif-1.jpg',{exact:true})).toBeVisible();await expect(xn).toHaveValue('200');await expect(yn).toHaveValue('123');
   const replacement=await download();expect(replacement.reply.mark).toMatchObject({gapX:200,gapY:123});expect(replacement.reply.count).toBe(4);
-});
-
-for(const width of [390,1280]) test(`inspectable custom-gap editor at ${width}px`,async({page})=>{
-  await page.setViewportSize({width,height:900});
-  await page.goto('/');await page.locator('input[type=file]').setInputFiles('tests/fixtures/images/exif-6.png');await page.getByLabel('Watermark text').fill('For verification only');
-  await page.getByLabel('Angle',{exact:true}).fill('45');await page.getByLabel('Angle',{exact:true}).press('Enter');await page.getByRole('button',{name:'Tiled',exact:true}).click();await expect(page.locator('.watermark-selection')).toHaveCount(0);
-  for(const [name,value] of [['Horizontal gap value','37'],['Vertical gap value','123']]){const n=page.getByRole('spinbutton',{name,exact:true});await n.fill(value);await n.press('Enter');}
-  await expect(page.getByRole('spinbutton',{name:'Vertical gap value',exact:true})).toHaveValue('123');
-  await page.screenshot({path:join(tmpdir(),`markid-task-3-custom-gap-${width}.png`),fullPage:true});
 });
