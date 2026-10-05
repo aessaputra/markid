@@ -53,11 +53,14 @@ These tests cover headers, caching, worker/fallback exports, privacy, and access
 
 ## Deployment
 
-MarkID is deployed as an asset-only [Cloudflare Worker with Static Assets](https://developers.cloudflare.com/workers/static-assets/) at [markid.aes.my.id](https://markid.aes.my.id). No Worker script, bindings, or framework adapter: `wrangler.jsonc` serves `./dist` with single-page-application fallback.
+MarkID runs as an asset-only [Cloudflare Worker with Static Assets](https://developers.cloudflare.com/workers/static-assets/) at [markid.aes.my.id](https://markid.aes.my.id). `wrangler.jsonc` serves `./dist` with `single-page-application` fallback. No Worker script, bindings, or framework adapter.
 
-### Automatic deploys
+### Deploy with Cloudflare dashboard (current setup)
 
-Pushes to `main` build and deploy automatically via [Workers Builds](https://developers.cloudflare.com/workers/ci-cd/builds/):
+Use [Workers Builds](https://developers.cloudflare.com/workers/ci-cd/builds/) so pushes deploy without local steps:
+
+1. Open Workers and connect the Git repository.
+2. Set the build configuration:
 
 | Setting | Value |
 |---|---|
@@ -66,7 +69,21 @@ Pushes to `main` build and deploy automatically via [Workers Builds](https://dev
 | Output directory | `dist` |
 | `NODE_VERSION` | `24` |
 
-Pushes to other branches produce preview URLs. `public/_headers` ships CSP, `nosniff`, HTML `no-cache`, and immutable `/assets/*` caching with the build.
+3. Push to `main` for production. Pushes to other branches get preview URLs.
+4. `public/_headers` ships with the build: CSP, `nosniff`, HTML `no-cache`, and immutable caching for `/assets/*`.
+
+### Deploy manually with Wrangler
+
+Use this for a one-off deploy or a local build check:
+
+```sh
+npm ci --include=dev
+npm run build
+npx wrangler login
+npx wrangler deploy
+```
+
+Keep dashboard Builds as the production path. Manual deploys do not replace it.
 
 ## Usage
 
