@@ -1,3 +1,5 @@
+![MarkID application](assets/application.png)
+
 # MarkID
 
 Add a text watermark to an image or PDF before sharing. Files, filenames, and watermark text are processed in your browser, without uploads or automatic file storage.
