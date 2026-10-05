@@ -5,7 +5,7 @@ Add a text watermark to an image or PDF before sharing. Files, filenames, and wa
 Built with Svelte 5, TypeScript, Vite, and Canvas. PDF preview uses PDF.js; PDF export uses pdf-lib.
 
 > [!IMPORTANT]
-> MarkID is live at [markid.aes.my.id](https://markid.aes.my.id). Physical-device, cross-browser, and embedded HEIC decoder LGPL distribution checks remain incomplete. See the [third-party summary](#third-party).
+> MarkID is live at [markid.aes.my.id](https://markid.aes.my.id). Tested with sample files in desktop Chromium. Real phones, other browsers, and the HEIC decoder license check are still open. See the [third-party summary](#third-party).
 
 ## Features
 
@@ -40,16 +40,13 @@ npm run test:browser -- --workers=2
 npm run build
 ```
 
-Vite writes the static site to `dist/`. When the Playwright browser download is unavailable, `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` can select an existing Chromium executable.
-
-Production-header tests build and serve `dist/` on loopback with the test server's CSP, MIME, and cache settings:
+Vite writes the static site to `dist/`. Header and caching checks use a local server plus Chromium:
 
 ```sh
-# Requires Poppler's pdftoppm for the independent PDF zoom artifact.
 npx playwright test -c playwright.csp.config.ts --project=chromium --workers=2
 ```
 
-These tests cover headers, caching, worker/fallback exports, privacy, and accessibility. They do not verify a deployed site. Firefox/WebKit projects are configured, but successful execution is still required before claiming support.
+These tests do not verify the deployed site. Firefox and WebKit have configs, but no passing runs yet.
 
 ## Deployment
 
@@ -99,14 +96,14 @@ Keep dashboard Builds as the production path. Manual deploys do not replace it.
 | HEIC, HEIF | JPEG | Native decoding is attempted first, with a pinned CDN-loaded HEIC decoder fallback. |
 | PDF | PDF | Watermark added to every page; original page content is not rasterized on export. |
 
-Synthetic fixtures have been exercised in desktop Chromium, including image orientation and PDF CropBox/rotation. This is not universal format or real-camera compatibility. Animated images and collections are outside scope. Locked PDFs and recognized signature fields/dictionaries are rejected.
+Tested in desktop Chromium with sample files. This is not proof of real-camera or cross-browser support. Animated images are outside scope. Locked PDFs and signed PDFs are rejected.
 
 ## Privacy and limitations
 
-- No accounts, backend, analytics, uploads, or automatic file persistence. App and PDF assets remain local to the app origin. If native HEIC decoding fails, the browser fetches the pinned decoder library from jsDelivr; this sends ordinary request metadata to the CDN, not your file or watermark. HEIC fallback requires network/CDN availability unless the browser has cached the library; offline operation is not guaranteed.
-- Photos retain their full decoded dimensions. JPEG output is encoded once at quality `0.92`, without a fixed input-byte, megapixel, or output-byte cap. Large files can exceed browser/device capacity and fail.
-- Hosting can log ordinary access metadata. Browsers and operating systems may retain caches, memory, or downloaded files; instant physical erasure is not promised.
-- Firefox, Safari, minimum browser versions, physical Android/iOS devices, HDR, and color/profile fidelity are not yet verified.
+- No accounts, backend, analytics, uploads, or automatic file persistence. App and PDF assets stay in your browser. If native HEIC decoding fails, the browser loads the pinned decoder library from jsDelivr; only standard request data goes to the CDN, and HEIC fallback needs network unless cached.
+- Photos keep full decoded size. JPEG output uses quality `0.92` with no fixed size cap, so very large files can fail on your device.
+- Hosting can log access data. Your browser or OS may keep caches or downloaded files.
+- Firefox, Safari, minimum browser versions, real Android/iOS devices, HDR, and color fidelity are not verified yet.
 
 > [!WARNING]
 > A watermark is not redaction, encryption, or tamper-proof protection. PDF export is not a sanitizer: original links, actions, attachments, and other active content may survive and execute in another reader. Inspect the final file before sharing it.
@@ -119,7 +116,7 @@ Synthetic fixtures have been exercised in desktop Chromium, including image orie
 |---|---|---|
 | [heic-to 1.6.5](https://github.com/hoppergee/heic-to/tree/v1.6.5) | [LGPL-3.0](https://github.com/hoppergee/heic-to/blob/v1.6.5/LICENSE) | HEIC/HEIF fallback decoding to bitmap, including upstream libheif/libde265. |
 
-Loaded only after native HEIC decoding fails, from the pre-configured [pinned CSP module](https://cdn.jsdelivr.net/npm/heic-to@1.6.5/dist/csp/heic-to.js); no URL setting is required. The decoder is not bundled in MarkID's build. Decoding and JPEG export remain on-device; fetching the library requires CDN/network availability. CDN delivery does not by itself resolve license obligations.
+The decoder loads only after native HEIC decoding fails, from the pinned [CSP module](https://cdn.jsdelivr.net/npm/heic-to@1.6.5/dist/csp/heic-to.js). It is not bundled in MarkID's build. Decoding and export stay on your device, but loading the library needs network unless cached.
 
 ### Bundled components
 
@@ -130,4 +127,4 @@ Loaded only after native HEIC decoding fails, from the pre-configured [pinned CS
 | Svelte and bundled helpers | MIT | Application UI; exact dependencies are recorded in `package-lock.json`. |
 | PDF CMaps and standard fonts | BSD-style / OFL, as supplied by PDF.js | Local rendering assets; upstream license files remain alongside these assets. |
 
-UI and watermarks use system fonts; no webfont is bundled. This table is a summary, not a complete distribution license package. HEIC decoder distribution verification remains incomplete.
+Tables are summaries; full terms are in the linked upstream licenses. UI and watermarks use system fonts, so no webfont is bundled.
